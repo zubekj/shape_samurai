@@ -148,7 +148,12 @@ class GameServerApp(App):
 
     def player_move(self, player_name, move):
         self.game_state.update(player_name, move)
+        if self.game_state.check_victory_condition():
+            self.game_victory()
         self.server_factory.broadcast_object(self.game_state)
+
+    def game_victory(self):
+        print("Congratulations! Game Victory!")
 
     def on_stop(self):
         self.server_factory.reset_connections()

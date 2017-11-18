@@ -6,8 +6,8 @@ class GameState(object):
     GameState represent current state of the game. Game logic is implemented
     here.
     """
-    RADIUS = 0.01
-    PROGRESS_MARGIN = 20
+    RADIUS = 1
+    PROGRESS_MARGIN = 0
 
     def __init__(self, player_a_pos, player_b_pos, shape):
         """ 
@@ -23,8 +23,9 @@ class GameState(object):
 
         if player[1] < len(self.shape) and self.check_radius(self.shape[player[1]], position):
             player[1] += 1
+            print("The progress of player {0} has been increased. Now it is {1}".format(player_name, player[1]))
 
-        if self.check_progress(self.player_dict["a"], self.player_dict["b"]):
+        if self.check_progress(self.player_dict["a"][1], self.player_dict["b"][1]):
             print("Players exceeded progress margin!")
         
     def check_radius(self, checkpoint, position):

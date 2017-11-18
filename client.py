@@ -68,6 +68,7 @@ class RootLayout(BoxLayout):
         self.app = app
         self.shape = None
         self.finger = None
+        self.finger1 = None
         super(RootLayout, self).__init__(**kwargs)
 
         self.add_widget(self.top_layout)
@@ -103,14 +104,14 @@ class RootLayout(BoxLayout):
     def on_touch_down(self, touch):
         if self.shape:
             touch.grab(self)
-            pos = (touch.x - 10.0, touch.y - 10.0)
+            pos = ((touch.x - 10.0) / self.drawing_container.width, (touch.y - 10.0) / self.drawing_container.height)
             self.app.connection.write(zlib.compress(pickle.dumps(pos)))
 
         return True
 
     def on_touch_move(self, touch):
         if self.finger:
-            pos = (touch.x - 10.0, touch.y - 10.0)
+            pos = ((touch.x - 10.0) / self.drawing_container.width, (touch.y - 10.0) / self.drawing_container.height)
             self.app.connection.write(zlib.compress(pickle.dumps(pos)))
 
     def on_touch_up(self, touch):
@@ -126,12 +127,29 @@ class RootLayout(BoxLayout):
                                      self.drawing_container.pos[1] + point[1] * self.drawing_container.height]
 
         if self.finger:
-            self.finger.pos = self.shape.player_a
+            pos = (self.shape.player_dict['a'][0][0] * self.drawing_container.width,
+                   self.shape.player_dict['a'][0][1] * self.drawing_container.height)
+            self.finger.pos = pos
+
+            if self.finger1:
+                pos = (self.shape.player_dict['b'][0][0] * self.drawing_container.width,
+                       self.shape.player_dict['b'][0][1] * self.drawing_container.height)
+                self.finger1.pos = pos
         elif self.shape:
+            pos = (self.shape.player_dict['a'][0][0] * self.drawing_container.width,
+                   self.shape.player_dict['a'][0][1] * self.drawing_container.height)
             color = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
             with self.drawing_container.canvas:
                 Color(*color, mode='rgb', group='group')
-                self.finger = Ellipse(size=(20, 20), pos=self.shape.player_a, group='group')
+                self.finger = Ellipse(size=(20, 20), pos=pos, group='group')
+
+            if not self.finger1:
+                pos = (self.shape.player_dict['b'][0][0] * self.drawing_container.width,
+                       self.shape.player_dict['b'][0][1] * self.drawing_container.height)
+                color = (0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0)
+                with self.drawing_container.canvas:
+                    Color(*color, mode='rgb', group='group')
+                    self.finger1 = Ellipse(size=(20, 20), pos=pos, group='group')
 
         self.top_.size = self.top_layout.size
         self.top_.pos = self.top_layout.pos
@@ -168,6 +186,7 @@ class GameClientApp(App):
         self.connection.write("login".encode('utf-8'))
 
     def update_game(self, game_state):
+
         self.root.shape = game_state
         self.root.refresh(game_state)
 
