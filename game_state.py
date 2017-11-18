@@ -6,13 +6,12 @@ class GameState(object):
     GameState represent current state of the game. Game logic is implemented
     here.
     """
-
     RADIUS = 0.01
 
     def __init__(self):
         self.player_a = (0, 0)
         self.player_b = (0, 0)
-        self.shape = [(0,0), (0.1,0), (0.2,0), (0.3, 0)]
+        self.shape = [[0,0], [0.5, 1], [1,0], [0, 0]]
         self.player_a_progress = 0
         self.player_b_progress = 0
 
