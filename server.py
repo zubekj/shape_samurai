@@ -11,6 +11,8 @@ from kivy.uix.boxlayout import BoxLayout
 
 import pickle
 import zlib
+import datetime
+from collections import namedtuple
 
 from game_state import GameState
 
@@ -90,6 +92,32 @@ class GameServerFactory(protocol.Factory):
             self.clients[client].transport.loseConnection()
         self.clients = {}
         self.app.label.text = "Server started\n"
+
+
+class PeriodicLogger:
+
+    def __init__(self, max_log_in_memory_size = 100):
+        self._log_list = []
+        self._log_current_size = 0
+        self.max_log_in_memory_size = max_log_in_memory_size
+    
+    def push(self, data):
+        if self._log_current_size < self.max_log_in_memory_size:
+            self._log_list.append(data)
+            self._log_current_size += 1
+        else:
+            self._log_list = []
+            self._log_current_size = 0
+
+    def dump(data, file='log/log_for_research'):
+        with open(file, 'a') as l:
+            l.write(data)
+
+    message = 'time: {time}, player name: {player_name}, move: {move}'.format(
+        time=time,
+        player_name=player_name,
+        move=move,
+    )
 
 
 class GameServerApp(App):
