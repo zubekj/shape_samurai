@@ -184,6 +184,8 @@ class GameClientApp(App):
     def on_connection(self, connection):
         self.connection = connection
         self.connection.write("login".encode('utf-8'))
+        RootLayout.label.text = "Connected"
+
 
     def update_game(self, game_state):
 
