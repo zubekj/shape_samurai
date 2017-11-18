@@ -24,7 +24,7 @@ class GameState(object):
         if player[1] < len(self.shape) and self.check_radius(self.shape[player[1]], position):
             player[1] += 1
 
-        if self.check_progress(self.player_dict["a"], self.player_dict["b"]):
+        if self.check_progress(self.player_dict["a"][1], self.player_dict["b"][1]):
             print("Players exceeded progress margin!")
         
     def check_radius(self, checkpoint, position):
