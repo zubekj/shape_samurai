@@ -95,6 +95,10 @@ class GameServerFactory(protocol.Factory):
 
 
 class PeriodicLogger:
+    # TODO: move to separate thread
+    """
+    Logs events in the game as a data for use in the research.
+    """
 
     def __init__(self, max_log_in_memory_size = 100):
         self._log_list = []
@@ -106,9 +110,11 @@ class PeriodicLogger:
             self._log_list.append(data)
             self._log_current_size += 1
         else:
+            self.dump(self._log_list)
             self._log_list = []
             self._log_current_size = 0
 
+    @staticmethod
     def dump(data, file='log/log_for_research'):
         with open(file, 'a') as l:
             l.write(data)
