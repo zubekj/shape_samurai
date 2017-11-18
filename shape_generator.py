@@ -2,7 +2,7 @@
 """
 Created on Sat Nov 18 16:43:39 2017
 
-@author: HP
+@author: Paweł Wojtkiewicz
 """
 
 import math, random
