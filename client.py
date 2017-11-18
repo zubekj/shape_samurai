@@ -188,7 +188,7 @@ class GameClientApp(App):
 
 
     def update_game(self, game_state):
-
+        RootLayout.label.text = "Game Started"
         self.root.shape = game_state
         self.root.refresh(game_state)
 
