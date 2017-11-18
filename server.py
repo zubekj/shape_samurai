@@ -44,7 +44,8 @@ class GameServer(protocol.Protocol):
                     self.factory.clients["b"] = self
                     self.name = "b"
                 self.state = "CONNECTED"
-                self.factory.broadcast_object(self.factory.app.game_state)
+                # No game state should be broadcasted until start_game() is called!
+                #self.factory.broadcast_object(self.factory.app.game_state) 
                 self.factory.app.label.text = "First client connected"
                 if len(self.factory.clients) == 2:
                     self.factory.app.start_game()
@@ -113,11 +114,12 @@ class PeriodicLogger:
         with open(file, 'a') as l:
             l.write(data)
 
-    message = 'time: {time}, player name: {player_name}, move: {move}'.format(
-        time=time,
-        player_name=player_name,
-        move=move,
-    )
+        time, player_name, move = None, None, None
+        message = 'time: {time}, player name: {player_name}, move: {move}'.format(
+            time=time,
+            player_name=player_name,
+            move=move,
+        )
 
 
 class GameServerApp(App):
@@ -128,10 +130,6 @@ class GameServerApp(App):
     button = None
 
     def build(self):
-        player_a_pos = (0, 0)
-        player_b_pos = (0, 0)
-        shape = [(0, 0), (0.1, 0), (0.2, 0), (0.3, 0)]
-        self.game_state = GameState(player_a_pos, player_b_pos, shape)
         layout = BoxLayout(orientation="vertical")
         self.label = Label(text="Server started\n")
         self.button = Button(text="Reset", size=(100, 50), size_hint=(1, None))
@@ -144,9 +142,16 @@ class GameServerApp(App):
 
     def start_game(self):
         self.label.text = "Game started\n"
+        player_a_pos = (0, 0)
+        player_b_pos = (0, 0)
+        shape = [(0, 0), (0.1, 0), (0.2, 0), (0.3, 0)]
+        self.game_state = GameState(player_a_pos, player_b_pos, shape)
         self.server_factory.broadcast_object(self.game_state)
 
     def player_move(self, player_name, move):
+        if self.game_state is None:
+            return
+
         self.game_state.update(player_name, move)
         if self.game_state.check_victory_condition():
             self.game_victory()
