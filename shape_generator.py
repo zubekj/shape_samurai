@@ -17,21 +17,6 @@ def clip(x, amin, amax) :
      
 
 def generatePolygon(aveRadius, irregularity, spikeyness, numVerts ) :
-    '''Start with the centre of the polygon at ctrX, ctrY, 
-    then creates the polygon by sampling points on a circle around the centre. 
-    Randon noise is added by varying the angular spacing between sequential points,
-    and by varying the radial distance of each point from the centre.
-
-    Params:
-    ctrX, ctrY - coordinates of the "centre" of the polygon
-    aveRadius - in px, the average radius of this polygon, this roughly controls how large the polygon is, really only useful for order of magnitude.
-    irregularity - [0,1] indicating how much variance there is in the angular spacing of vertices. [0,1] will map to [0, 2pi/numberOfVerts]
-    spikeyness - [0,1] indicating how much variance there is in each vertex from the circle of radius aveRadius. [0,1] will map to [0, aveRadius]
-    numVerts - self-explanatory
-
-    Returns a list of vertices, in CCW order.
-    '''
-
     irregularity = clip( irregularity, 0,1 ) * 2*math.pi / numVerts
     spikeyness = clip( spikeyness, 0,1 ) * aveRadius
 
@@ -65,40 +50,6 @@ def generatePolygon(aveRadius, irregularity, spikeyness, numVerts ) :
 
     return points
 
-
-
-
-verts = generatePolygon(aveRadius=100, irregularity=0.5, spikeyness=0.4, numVerts=16 )
-
-black = (0,0,0)
-white=(255,255,255)
-im = Image.new('RGB', (500, 500), white)
-imPxAccess = im.load()
-draw = ImageDraw.Draw(im)
-tupVerts = map(tuple,verts)
-
-print(verts)
-
-# either use .polygon(), if you want to fill the area with a solid colour
-draw.polygon( verts, outline=black,fill=white )
-
-# or .line() if you want to control the line thickness, or use both methods together!
-draw.line( verts+[verts[0]], width=2, fill=black )
-
-im.show()
-
-# now you can save the image (im), or do whatever else you want with it.
-
-verts[16]
-
-
-
-density=0.001
-
-
-shape_points=[]
-
-i=5
 
 verts = generatePolygon(aveRadius=0.4, irregularity=0.2, spikeyness=0.2, numVerts=5 )
 
@@ -158,10 +109,7 @@ import matplotlib.pyplot as plt
 plt.scatter([p[0] for p in verts], [p[1] for p in verts] )
 plt.scatter([p[0] for p in sided_point_5], [p[1] for p in sided_point_5])
 
-
-
-plt.ylabel('some numbers')
-plt.show()    
+ 
 
 
 
