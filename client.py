@@ -1,4 +1,9 @@
+from random import random
+
+from kivy.graphics.vertex_instructions import Line, Ellipse
 from kivy.support import install_twisted_reactor
+from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.widget import Widget
 
 install_twisted_reactor()
 
@@ -6,20 +11,13 @@ from twisted.internet import reactor, protocol
 
 from kivy.app import App
 from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.image import Image
 from kivy.uix.popup import Popup
-from kivy.properties import ListProperty
 from kivy.graphics import Color, Rectangle
+from kivy.clock import Clock
 
-import sys
 import pickle
 import zlib
-
-from game_state import GameState
-
 
 class GameClient(protocol.Protocol):
     """
@@ -48,49 +46,119 @@ class GameClientFactory(protocol.ClientFactory):
         return GameClient(self)
 
     def clientConnectionLost(self, connector, reason):
-        msg = 'Connection was dropped by the server.'
-        self.app.popup = Popup(title='Connection lost',
-                               content=Label(text=msg),
-                               auto_dismiss=False)
-        self.app.popup.open()
+        pass
 
     def clientConnectionFailed(self, connector, reason):
         msg = 'Connection failed: server is not responding.'
-        self.app.popup = Popup(title='Connection failed',
-                               content=Label(text=msg),
-                               auto_dismiss=False)
-        self.app.popup.open()
 
 
-class RootLayout(FloatLayout):
+
+class RootLayout(BoxLayout):
     """
     RootLayout is the main widget of game window. Sprites are drawn here.
     It captures user input.
     """
 
-    background_color = ListProperty([0, 0, 0, 1])
+    label = Label(text='Waiting for server...')
+    top_layout = AnchorLayout(size_hint=(1, 0.1))
+    bottom_layout = AnchorLayout(size_hint=(1, 0.8))
+    drawing_container = Widget(size_hint=(0.8, 0.8))
 
     def __init__(self, app, **kwargs):
         self.app = app
+        self.shape = None
+        self.finger = None
+        self.finger1 = None
         super(RootLayout, self).__init__(**kwargs)
-        self._update_color()
-        self.bind(background_color=self._update_color)
+
+        self.add_widget(self.top_layout)
+        self.add_widget(self.bottom_layout)
+        self.top_layout.add_widget(self.label)
+        self.bottom_layout.add_widget(self.drawing_container)
+
+        color = (232.0 / 255.0, 234.0 / 255.0, 246.0 / 255.0)
+        with self.canvas:
+            Color(*color, mode='rgb')
+            self.line = Line()
+
+        with self.label.canvas:
+            Color(*color, mode='rgb')
+
+        color = (26.0 / 255.0, 35.0 / 255.0, 126.0 / 255.0)
+        with self.top_layout.canvas.before:
+            Color(*color, mode='rgb')
+            self.top_ = Rectangle(size=self.top_layout.size,
+                           pos=self.top_layout.pos)
+
+        color = (40.0 / 255.0, 53.0 / 255.0, 147.0 / 255.0)
+        with self.bottom_layout.canvas.before:
+            Color(*color, mode='rgb')
+            self.bottom_ = Rectangle(size=self.bottom_layout.size,
+                                      pos=self.bottom_layout.pos)
+
+        self.top_layout.height = 200
         self.bind(size=self._update_rect, pos=self._update_rect)
 
-    def _update_color(self, *args):
-        with self.canvas.before:
-            Color(*self.background_color)
-            self.rect = Rectangle(size=self.size, pos=self.pos)
-
-    def _update_rect(self, instance, value):
-        self.rect.pos = instance.pos
-        self.rect.size = instance.size
-
-    def on_touch_move(self, touch):
-        self.app.connection.write(zlib.compress(pickle.dumps(touch.pos)))
+        Clock.schedule_interval(self.refresh, 0.1)
 
     def on_touch_down(self, touch):
-        self.app.connection.write(zlib.compress(pickle.dumps(touch.pos)))
+        if self.shape:
+            touch.grab(self)
+            pos = ((touch.x - 10.0) / self.drawing_container.width, (touch.y - 10.0) / self.drawing_container.height)
+            self.app.connection.write(zlib.compress(pickle.dumps(pos)))
+
+        return True
+
+    def on_touch_move(self, touch):
+        if self.finger:
+            pos = ((touch.x - 10.0) / self.drawing_container.width, (touch.y - 10.0) / self.drawing_container.height)
+            self.app.connection.write(zlib.compress(pickle.dumps(pos)))
+
+    def on_touch_up(self, touch):
+        if self.finger:
+            self.drawing_container.canvas.remove(self.finger)
+            self.finger = None
+
+    def refresh(self, value):
+        self.line.points = []
+        if self.shape:
+            for point in self.shape.shape:
+                self.line.points += [self.drawing_container.pos[0] + point[0] * self.drawing_container.width,
+                                     self.drawing_container.pos[1] + point[1] * self.drawing_container.height]
+
+        if self.finger:
+            pos = (self.shape.player_dict['a'][0][0] * self.drawing_container.width,
+                   self.shape.player_dict['a'][0][1] * self.drawing_container.height)
+            self.finger.pos = pos
+
+            if self.finger1:
+                pos = (self.shape.player_dict['b'][0][0] * self.drawing_container.width,
+                       self.shape.player_dict['b'][0][1] * self.drawing_container.height)
+                self.finger1.pos = pos
+        elif self.shape:
+            pos = (self.shape.player_dict['a'][0][0] * self.drawing_container.width,
+                   self.shape.player_dict['a'][0][1] * self.drawing_container.height)
+            color = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
+            with self.drawing_container.canvas:
+                Color(*color, mode='rgb', group='group')
+                self.finger = Ellipse(size=(20, 20), pos=pos, group='group')
+
+            if not self.finger1:
+                pos = (self.shape.player_dict['b'][0][0] * self.drawing_container.width,
+                       self.shape.player_dict['b'][0][1] * self.drawing_container.height)
+                color = (0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0)
+                with self.drawing_container.canvas:
+                    Color(*color, mode='rgb', group='group')
+                    self.finger1 = Ellipse(size=(20, 20), pos=pos, group='group')
+
+        self.top_.size = self.top_layout.size
+        self.top_.pos = self.top_layout.pos
+
+        self.bottom_.size = self.bottom_layout.size
+        self.bottom_.pos = self.bottom_layout.pos
+
+    def _update_rect(self, instance, value):
+        self.refresh(value)
 
 
 class GameClientApp(App):
@@ -101,47 +169,26 @@ class GameClientApp(App):
     popup = None
 
     def build(self):
+        self.title = 'Shape Samurai'
         root = self.setup_gui()
         self.connect_to_server()
         return root
 
     def setup_gui(self):
-        self.player_a = Image(source="a.png")
-        self.player_b = Image(source="b.png")
-        self.root = RootLayout(self)
-        self.root.add_widget(self.player_a)
-        self.root.add_widget(self.player_b)
+        self.root = RootLayout(self, orientation='vertical')
         return self.root
 
     def connect_to_server(self):
-        msg = 'Waiting for connection.'
-        self.popup = Popup(title='Waiting',
-                           content=Label(text=msg),
-                           auto_dismiss=False)
-        self.popup.open()
         reactor.connectTCP('localhost', 8000, GameClientFactory(self))
 
     def on_connection(self, connection):
-        self.popup.dismiss()
         self.connection = connection
         self.connection.write("login".encode('utf-8'))
-        msg = 'Waiting for the second player.'
-        self.popup = Popup(title='Waiting',
-                           content=Label(text=msg),
-                           auto_dismiss=False)
-        self.popup.open()
 
     def update_game(self, game_state):
-        if self.popup is not None:
-            self.popup.dismiss()
-            self.popup = None
 
-        self.player_a.center = game_state.player_a
-        self.player_b.center = game_state.player_b
-        if game_state.interaction:
-            self.root.background_color = [1, 0, 0, 1]
-        else:
-            self.root.background_color = [0, 0, 0, 1]
+        self.root.shape = game_state
+        self.root.refresh(game_state)
 
     def on_stop(self):
         if self.connection is not None:
