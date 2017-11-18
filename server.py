@@ -42,6 +42,7 @@ class GameServer(protocol.Protocol):
                     self.factory.clients["b"] = self
                     self.name = "b"
                 self.state = "CONNECTED"
+                self.factory.broadcast_object(self.factory.app.game_state)
                 self.factory.app.label.text = "First client connected"
                 if len(self.factory.clients) == 2:
                     self.factory.app.start_game()
@@ -99,6 +100,10 @@ class GameServerApp(App):
     button = None
 
     def build(self):
+        player_a_pos = (0, 0)
+        player_b_pos = (0, 0)
+        shape = [(0, 0), (0.1, 0), (0.2, 0), (0.3, 0)]
+        self.game_state = GameState(player_a_pos, player_b_pos, shape)
         layout = BoxLayout(orientation="vertical")
         self.label = Label(text="Server started\n")
         self.button = Button(text="Reset", size=(100, 50), size_hint=(1, None))
@@ -111,7 +116,6 @@ class GameServerApp(App):
 
     def start_game(self):
         self.label.text = "Game started\n"
-        self.game_state = GameState()
         self.server_factory.broadcast_object(self.game_state)
 
     def player_move(self, player_name, move):

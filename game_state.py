@@ -6,7 +6,6 @@ class GameState(object):
     GameState represent current state of the game. Game logic is implemented
     here.
     """
-
     RADIUS = 0.01
     PROGRESS_MARGIN = 20
 
@@ -16,7 +15,6 @@ class GameState(object):
         """
         
         self.player_dict = {"a": [player_a_pos, 0], "b": [player_b_pos, 0]}
-        #self.shape = [(0, 0), (0.1, 0), (0.2, 0), (0.3, 0)]
         self.shape = shape
 
     def update(self, player_name, position):
