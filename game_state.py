@@ -8,25 +8,34 @@ class GameState(object):
     """
 
     RADIUS = 0.01
+    PROGRESS_MARGIN = 20
 
-    def __init__(self):
-        self.player_a = (0, 0)
-        self.player_b = (0, 0)
-        self.shape = [(0,0), (0.1,0), (0.2,0), (0.3, 0)]
-        self.player_a_progress = 0
-        self.player_b_progress = 0
+    def __init__(self, player_a_pos, player_b_pos, shape):
+        """ 
+        The player list will consist of a position tuple and progress index
+        """
+        
+        self.player_dict = {"a": [player_a_pos, 0], "b": [player_b_pos, 0]}
+        #self.shape = [(0, 0), (0.1, 0), (0.2, 0), (0.3, 0)]
+        self.shape = shape
 
     def update(self, player_name, position):
-        if player_name == "a":
-            self.player_a = position
-            if self.check_progress(self.shape[self.player_a_progress], self.player_a):
-                self.player_a_progress += 1
+        player = self.player_dict[player_name]
+        player[0] = position
 
-        else:
-            self.player_b = position
-            if self.check_progress(self.shape[self.player_b_progress], self.player_b):
-                self.player_b_progress += 1
+        if player[1] < len(self.shape) and self.check_radius(self.shape[player[1]], position):
+            player[1] += 1
 
-    def check_progress(self, checkpoint, position):
+        if self.check_progress(self.player_dict["a"], self.player_dict["b"]):
+            print("Players exceeded progress margin!")
+        
+    def check_radius(self, checkpoint, position):
         dist = np.linalg.norm(np.array(checkpoint) - np.array(position))
         return dist <= self.RADIUS
+
+    def check_progress(self, progress_a, progress_b):
+        return abs((progress_a - progress_b)) > self.PROGRESS_MARGIN
+
+    def check_victory_condition(self):
+        return self.player_dict["a"] == len(self.shape) and self.player_dict["b"] == len(self.shape)
+
