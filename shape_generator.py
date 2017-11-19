@@ -5,7 +5,7 @@ Created on Sat Nov 18 16:43:39 2017
 @author: Paweł Wojtkiewicz
 """
 
-import math, random
+import math, random, numpy
 from PIL import *
 import matplotlib.pyplot as plt
 
@@ -19,6 +19,7 @@ def clip(x, amin, amax):
         return amax
     else:
         return x
+
 
 
 def generatePolygon(aveRadius, irregularity, spikeyness, numVerts):
@@ -53,12 +54,17 @@ def generatePolygon(aveRadius, irregularity, spikeyness, numVerts):
 
         angle = angle + angleSteps[i]
 
+    if((numpy.array(verts) > 0.90).any() or (numpy.array(verts) < 0.1).any()):
+        return generatePolygon(aveRadius, irregularity, spikeyness, numVerts)  
+    
+    
+    
     return points
 
 
 def generatePolygonShapePoints(verts, density):
     shape_points = []
-
+    
     for i in range(len(verts)):
 
         shape_points.append(verts[i])
