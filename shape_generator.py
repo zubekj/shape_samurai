@@ -54,11 +54,10 @@ def generatePolygon(aveRadius, irregularity, spikeyness, numVerts):
         angle = angle + angleSteps[i]
         # Input test for verts outside scope.
 
-    if((numpy.array(verts) > 0.90).any() or (numpy.array(verts) < 0.1).any()):
+    if((numpy.array(points) > 0.90).any() or (numpy.array(points) < 0.1).any()):
+        print ("OUT OF SCOPE")
         return generatePolygon(aveRadius, irregularity, spikeyness, numVerts)  
-    
-    
-    
+           
     return points
 
 
@@ -101,9 +100,15 @@ def generatePolygonShapePoints(verts, density):
 
     return shape_points
 
-#
-#verts = generatePolygon(aveRadius=0.3, irregularity=0.5, spikeyness=0.4, numVerts=5)
+#TESTING
+#verts = generatePolygon(aveRadius=0.3, irregularity=10, spikeyness=1000, numVerts=5)
 #sided_point_5 = generatePolygonShapePoints(verts, 0.05)
+
+
+#verts = generatePolygon(aveRadius=0.3, irregularity=0.5, spikeyness=0.4, numVerts=5)
+#plt.scatter([p[0] for p in verts], [p[1] for p in verts], color='red')
+#plt.axis([0, 1, 0, 1])
+#plt.show()
 
 #plt.scatter([p[0] for p in sided_point_5], [p[1] for p in sided_point_5])
 #plt.scatter([p[0] for p in verts], [p[1] for p in verts], color='red')
