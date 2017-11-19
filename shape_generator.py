@@ -115,3 +115,13 @@ def generatePolygonShapePoints(verts, density):
 #plt.scatter([p[0] for p in verts], [p[1] for p in verts], color='red')
 #plt.axis([0, 1, 0, 1])
 #plt.show()
+#import matplotlib.pyplot as plt
+
+#verts = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
+#sided_point_5 = generatePolygonShapePoints(verts, 0.05)
+#plt.scatter([p[0] for p in sided_point_5], [p[1] for p in sided_point_5])
+#plt.scatter([p[0] for p in verts], [p[1] for p in verts], color='red')
+#plt.axis([0, 1, 0, 1])
+#plt.show()
+
+

@@ -4,7 +4,7 @@ import numpy as np
 from shape_generator import generatePolygon, generatePolygonShapePoints
 
 def generate_shape():
-    verts_array = generatePolygon(aveRadius=0.3, irregularity=0.5, spikeyness=0.4, numVerts=5)
+    verts_array = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
     shape = generatePolygonShapePoints(verts=verts_array, density=0.01)
     return shape
 
