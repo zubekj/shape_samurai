@@ -17,13 +17,15 @@ from game_state import GameState
 import logging
 import logging.handlers
 import queue
+import datetime
 
 
-log_format = ('[%(asctime)s] %(levelname)-4s %(name)-4s %(message)s')
+log_format = logging.Formatter('[%(asctime)s] %(levelname)-4s %(name)-4s %(message)s')
+log_format_default = ('[%(asctime)s] %(levelname)-4s %(name)-4s %(message)s')
 
 logging.basicConfig(
     filename='joint_action_game.log',
-    format=log_format,
+    format=log_format_default,
     level=logging.INFO,
 )
 
@@ -36,7 +38,10 @@ def message(time, player_name, move):
     return msg
 
 que = queue.Queue(-1)  # no limit on size
-handler = logging.StreamHandler()
+handler = logging.FileHandler('joint_action_game.log')
+handler.setFormatter(log_format)
+handler.setLevel(logging.INFO)
+
 listener = logging.handlers.QueueListener(que, handler)
 
 queue_handler = logging.handlers.QueueHandler(que)
@@ -142,6 +147,8 @@ class GameServerApp(App):
         self.server_factory = GameServerFactory(self)
         self.button.bind(on_press=self.server_factory.reset_connections)
         reactor.listenTCP(8000, self.server_factory)
+        listener.start()
+        root.info('Building')
         return layout
 
     def start_game(self):
@@ -162,7 +169,7 @@ class GameServerApp(App):
             self.game_victory()
         self.server_factory.broadcast_object(self.game_state)
 
-        root.info('Test log')
+        root.info(message(datetime.datetime.now(), player_name, move))
 
     def game_victory(self):
         print("Congratulations! Game Victory!")
@@ -172,9 +179,9 @@ class GameServerApp(App):
 
     def on_stop(self):
         self.server_factory.reset_connections()
+        listener.stop()
         return True
 
 if __name__ == '__main__':
-    # listener.start()
+    root.info('entering main')
     GameServerApp().run()
-    # listener.stop()
