@@ -20,6 +20,11 @@ from game_state import GameState
 class GameServer(protocol.Protocol):
     """
     GameServer manages single client connection.
+
+    Posible states:
+        * WAITLOGIN -- connection established, waiting for "login" message
+        * READY -- client ready for game start
+        * GAME -- client during gameplay
     """
 
     def __init__(self, factory):
@@ -34,8 +39,8 @@ class GameServer(protocol.Protocol):
         after login are interpreted as compressed objects representing player
         moves.
         """
+        data = pickle.loads(zlib.decompress(data))
         if self.state == "WAITLOGIN":
-            data = data.decode('utf-8')
             if len(self.factory.clients) < 2 and data == "login":
                 if "a" not in self.factory.clients:
                     self.factory.clients["a"] = self
@@ -43,16 +48,15 @@ class GameServer(protocol.Protocol):
                 else:
                     self.factory.clients["b"] = self
                     self.name = "b"
-                self.state = "CONNECTED"
+                self.state = "READY"
                 # No game state should be broadcasted until start_game() is called!
-                #self.factory.broadcast_object(self.factory.app.game_state) 
+                #self.factory.broadcast_object(self.factory.app.game_state)
                 self.factory.app.label.text = "First client connected"
                 if len(self.factory.clients) == 2:
                     self.factory.app.start_game()
             else:
                 self.transport.loseConnection()
-        else:
-            data = pickle.loads(zlib.decompress(data))
+        elif self.state == "GAME":
             self.factory.app.player_move(self.name, data)
 
     def connectionLost(self, reason):
@@ -101,7 +105,7 @@ class PeriodicLogger:
         self._log_list = []
         self._log_current_size = 0
         self.max_log_in_memory_size = max_log_in_memory_size
-    
+
     def push(self, data):
         if self._log_current_size < self.max_log_in_memory_size:
             self._log_list.append(data)
@@ -146,6 +150,8 @@ class GameServerApp(App):
         player_b_pos = (0, 0)
         shape = [(0, 0), (0.1, 0), (0.2, 0), (0.3, 0)]
         self.game_state = GameState(player_a_pos, player_b_pos, shape)
+        for client in self.server_factory.clients.values():
+            client.state = "GAME"
         self.server_factory.broadcast_object(self.game_state)
 
     def player_move(self, player_name, move):
@@ -159,6 +165,9 @@ class GameServerApp(App):
 
     def game_victory(self):
         print("Congratulations! Game Victory!")
+        for client in self.server_factory.clients.values():
+            client.state = "READY"
+        self.server_factory.broadcast_object("victory")
 
     def on_stop(self):
         self.server_factory.reset_connections()
