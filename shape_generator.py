@@ -86,7 +86,9 @@ def generatePolygonShapePoints(verts, density):
 
         side_length = (((x1 - x2) ** 2) + ((y1 - y2) ** 2)) ** (1 / 2)
         split_number = math.floor(side_length / density)
-
+        if (split_number==0):
+            continue
+        
         next_x = x1
         next_y = y1
 
