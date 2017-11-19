@@ -7,12 +7,6 @@ v1.0
 """
 
 import math, random, numpy
-<<<<<<< HEAD
-#from PIL import *
-#import matplotlib.pyplot as plt
-=======
-
->>>>>>> 4ee72455db15f540c744109f2687f2a5f101d499
 
 
 def clip(x, amin, amax):

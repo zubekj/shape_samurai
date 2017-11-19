@@ -82,9 +82,15 @@ class RootLayout(BoxLayout):
         self.bottom_layout.add_widget(self.drawing_container)
         self.top_layout.add_widget(self.clock_display)
 
-        color = (232.0 / 255.0, 234.0 / 255.0, 246.0 / 255.0)
-        color_a = (255.0 / 255.0, 0 / 255.0, 0 / 255.0, 0.5)
-        color_b = (0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0, 0.5)
+        #color = (232.0 / 255.0, 234.0 / 255.0, 246.0 / 255.0)
+        color = (237.0 / 255.0, 212.0 / 255.0, 157.0 / 255.0, 1)
+        #color_a = (255.0 / 255.0, 0 / 255.0, 0 / 255.0, 0.5)
+        color_a = (3.0 / 255.0, 164.0 / 255.0, 119 / 255.0, 0.7)
+        #color_b = (0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0, 0.5)
+        color_b = (47.0 / 255.0, 23.0 / 255.0, 231.0 / 255.0, 0.5)
+        #color_start = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
+
+
         with self.canvas:
             Color(*color, mode='rgb')
             self.line = Line(width=5)
