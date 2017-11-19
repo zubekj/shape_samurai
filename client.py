@@ -1,5 +1,3 @@
-from random import random
-
 from kivy.graphics.vertex_instructions import Line, Ellipse
 from kivy.properties import NumericProperty
 from kivy.support import install_twisted_reactor
@@ -13,9 +11,7 @@ from twisted.internet import reactor, protocol
 from kivy.app import App
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.popup import Popup
 from kivy.graphics import Color, Rectangle
-from kivy.clock import Clock
 
 import pickle
 import zlib
@@ -83,9 +79,26 @@ class RootLayout(BoxLayout):
         self.top_layout.add_widget(self.clock_display)
 
         color = (232.0 / 255.0, 234.0 / 255.0, 246.0 / 255.0)
+        color_a = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
+        color_b = (0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0)
         with self.canvas:
             Color(*color, mode='rgb')
-            self.line = Line()
+            self.line = Line(width=5)
+            self.line.cap = 'round'
+            self.line.joint = 'round'
+            self.line.joint_precision = 100
+
+        with self.canvas.after:
+            Color(*color_b, mode='rgb')
+            self.line_green = Line(width=5)
+            self.line_green.cap = 'round'
+            self.line_green.joint = 'round'
+            self.line_green.joint_precision = 100
+            Color(*color_a, mode='rgb')
+            self.line_red = Line(width=5)
+            self.line_red.cap = 'round'
+            self.line_red.joint = 'round'
+            self.line_red.joint_precision = 100
 
         with self.label.canvas:
             Color(*color, mode='rgb')
@@ -94,7 +107,7 @@ class RootLayout(BoxLayout):
         with self.top_layout.canvas.before:
             Color(*color, mode='rgb')
             self.top_ = Rectangle(size=self.top_layout.size,
-                           pos=self.top_layout.pos)
+                                  pos=self.top_layout.pos)
 
         #color = (40.0 / 255.0, 53.0 / 255.0, 147.0 / 255.0)
         color = (150.0 / 255.0, 150.0 / 255.0, 150.0 / 255.0)
@@ -105,21 +118,21 @@ class RootLayout(BoxLayout):
                                       source='Samurai.png')
 
         self.top_layout.height = 200
-        self.bind(size=self._update_rect, pos=self._update_rect)
-
-        Clock.schedule_interval(self.refresh, 0.1)
+        self.drawing_container.bind(size=self._update_rect, pos=self._update_rect)
 
     def on_touch_down(self, touch):
-        if self.shape:
+        pos = ((touch.x - self.drawing_container.pos[0]) / self.drawing_container.width,
+               (touch.y - self.drawing_container.pos[1]) / self.drawing_container.height)
+        if 0 <= pos[0] <= 1 and 0 <= pos[1] <= 1 and self.shape:
             touch.grab(self)
-            pos = ((touch.x - 10.0) / self.drawing_container.width, (touch.y - 10.0) / self.drawing_container.height)
             self.app.connection.write(zlib.compress(pickle.dumps(pos)))
 
         return True
 
     def on_touch_move(self, touch):
-        if self.finger:
-            pos = ((touch.x - 10.0) / self.drawing_container.width, (touch.y - 10.0) / self.drawing_container.height)
+        pos = ((touch.x - self.drawing_container.pos[0]) / self.drawing_container.width,
+               (touch.y - self.drawing_container.pos[1]) / self.drawing_container.height)
+        if 0 <= pos[0] <= 1 and 0 <= pos[1] <= 1 and self.shape:
             self.app.connection.write(zlib.compress(pickle.dumps(pos)))
 
     def on_touch_up(self, touch):
@@ -129,35 +142,39 @@ class RootLayout(BoxLayout):
 
     def refresh(self, value):
         self.line.points = []
+        self.line_red.points = []
+        self.line_green.points = []
         if self.shape:
-            for point in self.shape.shape:
-                self.line.points += [self.drawing_container.pos[0] + point[0] * self.drawing_container.width,
-                                     self.drawing_container.pos[1] + point[1] * self.drawing_container.height]
+            for index, point in enumerate(self.shape.shape):
+                pos = [self.drawing_container.pos[0] + point[0] * self.drawing_container.width,
+                       self.drawing_container.pos[1] + point[1] * self.drawing_container.height]
+                self.line.points += pos
+                if index <= self.shape.player_dict['a'][1]:
+                    self.line_red.points += pos
+                if index <= self.shape.player_dict['b'][1]:
+                    self.line_green.points += pos
 
-        if self.finger:
-            pos = (self.shape.player_dict['a'][0][0] * self.drawing_container.width,
-                   self.shape.player_dict['a'][0][1] * self.drawing_container.height)
-            self.finger.pos = pos
+            a_pos = (self.drawing_container.pos[0] + self.shape.player_dict['a'][0][0] * self.drawing_container.width,
+                     self.drawing_container.pos[1] + self.shape.player_dict['a'][0][1] * self.drawing_container.height)
 
-            if self.finger1:
-                pos = (self.shape.player_dict['b'][0][0] * self.drawing_container.width,
-                       self.shape.player_dict['b'][0][1] * self.drawing_container.height)
-                self.finger1.pos = pos
-        elif self.shape:
-            pos = (self.shape.player_dict['a'][0][0] * self.drawing_container.width,
-                   self.shape.player_dict['a'][0][1] * self.drawing_container.height)
-            color = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
-            with self.drawing_container.canvas:
-                Color(*color, mode='rgb', group='group')
-                self.finger = Ellipse(size=(20, 20), pos=pos, group='group')
+            b_pos = (self.drawing_container.pos[0] + self.shape.player_dict['b'][0][0] * self.drawing_container.width,
+                     self.drawing_container.pos[1] + self.shape.player_dict['b'][0][1] * self.drawing_container.height)
 
-            if not self.finger1:
-                pos = (self.shape.player_dict['b'][0][0] * self.drawing_container.width,
-                       self.shape.player_dict['b'][0][1] * self.drawing_container.height)
-                color = (0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0)
+            if self.finger:
+                self.finger.pos = (a_pos[0] - 10, a_pos[1] - 10)
+                if self.finger1:
+                    self.finger1.pos = (b_pos[0] - 10, b_pos[1] - 10)
+            else:
+                color = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
                 with self.drawing_container.canvas:
                     Color(*color, mode='rgb', group='group')
-                    self.finger1 = Ellipse(size=(20, 20), pos=pos, group='group')
+                    self.finger = Ellipse(size=(20, 20), pos=(a_pos[0] - 10, a_pos[1] - 10), group='group')
+
+                if not self.finger1:
+                    color = (0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0)
+                    with self.drawing_container.canvas:
+                        Color(*color, mode='rgb', group='group')
+                        self.finger1 = Ellipse(size=(20, 20), pos=(b_pos[0] - 10, b_pos[1] - 10), group='group')
 
         self.top_.size = self.top_layout.size
         self.top_.pos = self.top_layout.pos
@@ -201,11 +218,15 @@ class GameClientApp(App):
 
     def on_connection(self, connection):
         self.connection = connection
-        self.connection.write("login".encode('utf-8'))
+        self.connection.write(zlib.compress(pickle.dumps("login")))
         RootLayout.label.text = "Connected"
 
     def update_game(self, game_state):
         RootLayout.label.text = "Game Started"
+        if game_state == "victory":
+            RootLayout.label.text = "Victory!"
+            self.connection.write(zlib.compress(pickle.dumps("login")))
+            return
         self.root.shape = game_state
         self.root.refresh(game_state)
         print(Counter.lbl)
@@ -214,6 +235,7 @@ class GameClientApp(App):
         if self.connection is not None:
             self.connection.loseConnection()
         return True
+
 
 if __name__ == '__main__':
     GameClientApp().run()
