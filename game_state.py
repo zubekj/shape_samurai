@@ -1,10 +1,11 @@
 import math
 import numpy as np
 
-#from shape_generator import generate_shape
+from shape_generator import generatePolygon, generatePolygonShapePoints
 
 def generate_shape():
-    shape = [(0, 0), (0.05, 0), (0.1, 0), (0.15, 0), (0.20, 0), (0.25, 0), (0.30, 0), (0.35, 0), (0.4, 0), (0.45, 0), (0.5, 0)]
+    verts_array = generatePolygon(aveRadius=0.3, irregularity=0.5, spikeyness=0.4, numVerts=5)
+    shape = generatePolygonShapePoints(verts=verts_array, density=0.01)
     return shape
 
 
