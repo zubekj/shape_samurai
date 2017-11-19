@@ -256,7 +256,7 @@ class GameClientApp(App):
             RootLayout.label.text = "Victory! Press any key to restart..."
             self.should_restart = True
             self.in_game = False
-            self.connection.write(zlib.compress(pickle.dumps("login")))
+            #self.connection.write(zlib.compress(pickle.dumps("login")))
             return
         self.root.shape = game_state
         self.root.refresh(game_state)
