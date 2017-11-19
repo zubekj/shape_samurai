@@ -3,7 +3,7 @@
 Created on Sat Nov 18 16:43:39 2017
 
 @author: Paweł Wojtkiewicz
-v0.1
+v1.0
 """
 
 import math, random, numpy
@@ -20,8 +20,6 @@ def clip(x, amin, amax):
         return amax
     else:
         return x
-
-
 
 def generatePolygon(aveRadius, irregularity, spikeyness, numVerts):
     irregularity = clip(irregularity, 0, 1) * 2 * math.pi / numVerts
@@ -103,12 +101,11 @@ def generatePolygonShapePoints(verts, density):
 
     return shape_points
 
+#
+#verts = generatePolygon(aveRadius=0.3, irregularity=0.5, spikeyness=0.4, numVerts=5)
+#sided_point_5 = generatePolygonShapePoints(verts, 0.05)
 
-verts = generatePolygon(aveRadius=0.3, irregularity=0.5, spikeyness=0.5, numVerts=6)
-
-sided_point_5 = generatePolygonShapePoints(verts, 0.05)
-
-plt.scatter([p[0] for p in sided_point_5], [p[1] for p in sided_point_5])
-plt.scatter([p[0] for p in verts], [p[1] for p in verts], color='red')
-plt.axis([0, 1, 0, 1])
-plt.show()
+#plt.scatter([p[0] for p in sided_point_5], [p[1] for p in sided_point_5])
+#plt.scatter([p[0] for p in verts], [p[1] for p in verts], color='red')
+#plt.axis([0, 1, 0, 1])
+#plt.show()
