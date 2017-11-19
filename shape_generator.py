@@ -7,8 +7,12 @@ v1.0
 """
 
 import math, random, numpy
+<<<<<<< HEAD
 #from PIL import *
 #import matplotlib.pyplot as plt
+=======
+
+>>>>>>> 4ee72455db15f540c744109f2687f2a5f101d499
 
 
 def clip(x, amin, amax):
@@ -86,7 +90,9 @@ def generatePolygonShapePoints(verts, density):
 
         side_length = (((x1 - x2) ** 2) + ((y1 - y2) ** 2)) ** (1 / 2)
         split_number = math.floor(side_length / density)
-
+        if (split_number==0):
+            continue
+        
         next_x = x1
         next_y = y1
 
