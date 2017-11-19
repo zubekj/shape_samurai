@@ -11,8 +11,6 @@ from kivy.uix.boxlayout import BoxLayout
 
 import pickle
 import zlib
-import datetime
-from collections import namedtuple
 
 from game_state import GameState
 
