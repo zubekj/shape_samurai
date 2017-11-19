@@ -14,8 +14,8 @@ class GameState(object):
     GameState represent current state of the game. Game logic is implemented
     here.
     """
-    RADIUS = 0.08
-    PROGRESS_MARGIN = 5
+    RADIUS = 0.04
+    PROGRESS_MARGIN = 20
 
     def __init__(self, player_a_pos, player_b_pos):
         """

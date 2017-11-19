@@ -83,8 +83,8 @@ class RootLayout(BoxLayout):
         self.top_layout.add_widget(self.clock_display)
 
         color = (232.0 / 255.0, 234.0 / 255.0, 246.0 / 255.0)
-        color_a = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
-        color_b = (0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0)
+        color_a = (255.0 / 255.0, 0 / 255.0, 0 / 255.0, 0.5)
+        color_b = (0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0, 0.5)
         with self.canvas:
             Color(*color, mode='rgb')
             self.line = Line(width=5)
@@ -93,12 +93,12 @@ class RootLayout(BoxLayout):
             self.line.joint_precision = 100
 
         with self.canvas.after:
-            Color(*color_b, mode='rgb')
+            Color(*color_b, mode='rgba')
             self.line_green = Line(width=5)
             self.line_green.cap = 'round'
             self.line_green.joint = 'round'
             self.line_green.joint_precision = 100
-            Color(*color_a, mode='rgb')
+            Color(*color_a, mode='rgba')
             self.line_red = Line(width=5)
             self.line_red.cap = 'round'
             self.line_red.joint = 'round'
