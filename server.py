@@ -18,6 +18,11 @@ from game_state import GameState
 class GameServer(protocol.Protocol):
     """
     GameServer manages single client connection.
+
+    Posible states:
+        * WAITLOGIN -- connection established, waiting for "login" message
+        * READY -- client ready for game start
+        * GAME -- client during gameplay
     """
 
     def __init__(self, factory):
@@ -32,8 +37,8 @@ class GameServer(protocol.Protocol):
         after login are interpreted as compressed objects representing player
         moves.
         """
+        data = pickle.loads(zlib.decompress(data))
         if self.state == "WAITLOGIN":
-            data = data.decode('utf-8')
             if len(self.factory.clients) < 2 and data == "login":
                 if "a" not in self.factory.clients:
                     self.factory.clients["a"] = self
@@ -41,15 +46,15 @@ class GameServer(protocol.Protocol):
                 else:
                     self.factory.clients["b"] = self
                     self.name = "b"
-                self.state = "CONNECTED"
-                self.factory.broadcast_object(self.factory.app.game_state)
+                self.state = "READY"
+                # No game state should be broadcasted until start_game() is called!
+                #self.factory.broadcast_object(self.factory.app.game_state)
                 self.factory.app.label.text = "First client connected"
                 if len(self.factory.clients) == 2:
                     self.factory.app.start_game()
             else:
                 self.transport.loseConnection()
-        else:
-            data = pickle.loads(zlib.decompress(data))
+        elif self.state == "GAME":
             self.factory.app.player_move(self.name, data)
 
     def connectionLost(self, reason):
@@ -92,6 +97,33 @@ class GameServerFactory(protocol.Factory):
         self.app.label.text = "Server started\n"
 
 
+class PeriodicLogger:
+
+    def __init__(self, max_log_in_memory_size = 100):
+        self._log_list = []
+        self._log_current_size = 0
+        self.max_log_in_memory_size = max_log_in_memory_size
+
+    def push(self, data):
+        if self._log_current_size < self.max_log_in_memory_size:
+            self._log_list.append(data)
+            self._log_current_size += 1
+        else:
+            self._log_list = []
+            self._log_current_size = 0
+
+    def dump(data, file='log/log_for_research'):
+        with open(file, 'a') as l:
+            l.write(data)
+
+        time, player_name, move = None, None, None
+        message = 'time: {time}, player name: {player_name}, move: {move}'.format(
+            time=time,
+            player_name=player_name,
+            move=move,
+        )
+
+
 class GameServerApp(App):
     """
     Game server application with simple GUI.
@@ -100,10 +132,6 @@ class GameServerApp(App):
     button = None
 
     def build(self):
-        player_a_pos = (0, 0)
-        player_b_pos = (0, 0)
-        shape = [(0, 0), (0.1, 0), (0.2, 0), (0.3, 0)]
-        self.game_state = GameState(player_a_pos, player_b_pos, shape)
         layout = BoxLayout(orientation="vertical")
         self.label = Label(text="Server started\n")
         self.button = Button(text="Reset", size=(100, 50), size_hint=(1, None))
@@ -116,9 +144,17 @@ class GameServerApp(App):
 
     def start_game(self):
         self.label.text = "Game started\n"
+        player_a_pos = (0, 0)
+        player_b_pos = (0, 0)
+        self.game_state = GameState(player_a_pos, player_b_pos)
+        for client in self.server_factory.clients.values():
+            client.state = "GAME"
         self.server_factory.broadcast_object(self.game_state)
 
     def player_move(self, player_name, move):
+        if self.game_state is None:
+            return
+
         self.game_state.update(player_name, move)
         if self.game_state.check_victory_condition():
             self.game_victory()
@@ -126,6 +162,9 @@ class GameServerApp(App):
 
     def game_victory(self):
         print("Congratulations! Game Victory!")
+        for client in self.server_factory.clients.values():
+            client.state = "WAITLOGIN"
+        self.server_factory.broadcast_object("victory")
 
     def on_stop(self):
         self.server_factory.reset_connections()
