@@ -163,7 +163,7 @@ class GameServerApp(App):
     def game_victory(self):
         print("Congratulations! Game Victory!")
         for client in self.server_factory.clients.values():
-            client.state = "READY"
+            client.state = "WAITLOGIN"
         self.server_factory.broadcast_object("victory")
 
     def on_stop(self):
