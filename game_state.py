@@ -35,7 +35,7 @@ class GameState(object):
         if self.check_progress(self.player_dict["a"][1], self.player_dict["b"][1]):
             self.reset_progress()
             print("Players exceeded progress margin! stop being bad and be awesome instead!")
-
+        
     def reset_progress(self):
         self.player_dict["a"][1] = 0
         self.player_dict["b"][1] = 0
@@ -49,4 +49,3 @@ class GameState(object):
 
     def check_victory_condition(self):
         return (self.player_dict["a"][1] == self.progress_goal) and (self.player_dict["b"][1] == self.progress_goal)
-
