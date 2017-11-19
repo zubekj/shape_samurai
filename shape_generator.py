@@ -7,8 +7,6 @@ v1.0
 """
 
 import math, random, numpy
-# from PIL import *
-# import matplotlib.pyplot as plt
 
 
 def clip(x, amin, amax):
@@ -56,14 +54,14 @@ def generatePolygon(aveRadius, irregularity, spikeyness, numVerts):
 
     if((numpy.array(points) > 0.90).any() or (numpy.array(points) < 0.1).any()):
         print ("OUT OF SCOPE")
-        return generatePolygon(aveRadius, irregularity, spikeyness, numVerts)  
-           
+        return generatePolygon(aveRadius, irregularity, spikeyness, numVerts)
+
     return points
 
 
 def generatePolygonShapePoints(verts, density):
     shape_points = []
-    
+
     for i in range(len(verts)):
 
         shape_points.append(verts[i])
@@ -86,6 +84,8 @@ def generatePolygonShapePoints(verts, density):
 
         side_length = (((x1 - x2) ** 2) + ((y1 - y2) ** 2)) ** (1 / 2)
         split_number = math.floor(side_length / density)
+        if (split_number==0):
+            continue
 
         next_x = x1
         next_y = y1
@@ -114,3 +114,13 @@ def generatePolygonShapePoints(verts, density):
 #plt.scatter([p[0] for p in verts], [p[1] for p in verts], color='red')
 #plt.axis([0, 1, 0, 1])
 #plt.show()
+#import matplotlib.pyplot as plt
+
+#verts = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
+#sided_point_5 = generatePolygonShapePoints(verts, 0.05)
+#plt.scatter([p[0] for p in sided_point_5], [p[1] for p in sided_point_5])
+#plt.scatter([p[0] for p in verts], [p[1] for p in verts], color='red')
+#plt.axis([0, 1, 0, 1])
+#plt.show()
+
+

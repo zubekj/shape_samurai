@@ -4,7 +4,7 @@ import numpy as np
 from shape_generator import generatePolygon, generatePolygonShapePoints
 
 def generate_shape():
-    verts_array = generatePolygon(aveRadius=0.3, irregularity=0.5, spikeyness=0.4, numVerts=5)
+    verts_array = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
     shape = generatePolygonShapePoints(verts=verts_array, density=0.01)
     return shape
 
@@ -14,8 +14,8 @@ class GameState(object):
     GameState represent current state of the game. Game logic is implemented
     here.
     """
-    RADIUS = 0.08
-    PROGRESS_MARGIN = 5
+    RADIUS = 0.04
+    PROGRESS_MARGIN = 20
 
     def __init__(self, player_a_pos, player_b_pos):
         """
