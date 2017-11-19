@@ -97,9 +97,11 @@ class RootLayout(BoxLayout):
                                       pos=self.bottom_layout.pos)
 
         self.top_layout.height = 200
-        self.bind(size=self._update_rect, pos=self._update_rect)
 
-        Clock.schedule_interval(self.refresh, 0.1)
+        # Update should bind to the child container, not parent.
+        #self.bind(size=self._update_rect, pos=self._update_rect)
+        self.drawing_container.bind(size=self._update_rect, pos=self._update_rect)
+        #Clock.schedule_interval(self.refresh, 0.1)
 
     def on_touch_down(self, touch):
         if self.shape:
@@ -184,9 +186,11 @@ class GameClientApp(App):
     def on_connection(self, connection):
         self.connection = connection
         self.connection.write("login".encode('utf-8'))
+        RootLayout.label.text = "Connected"
+
 
     def update_game(self, game_state):
-
+        RootLayout.label.text = "Game Started"
         self.root.shape = game_state
         self.root.refresh(game_state)
 

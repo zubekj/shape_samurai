@@ -11,6 +11,8 @@ from kivy.uix.boxlayout import BoxLayout
 
 import pickle
 import zlib
+import datetime
+from collections import namedtuple
 
 from game_state import GameState
 
@@ -42,7 +44,8 @@ class GameServer(protocol.Protocol):
                     self.factory.clients["b"] = self
                     self.name = "b"
                 self.state = "CONNECTED"
-                self.factory.broadcast_object(self.factory.app.game_state)
+                # No game state should be broadcasted until start_game() is called!
+                #self.factory.broadcast_object(self.factory.app.game_state) 
                 self.factory.app.label.text = "First client connected"
                 if len(self.factory.clients) == 2:
                     self.factory.app.start_game()
@@ -92,6 +95,33 @@ class GameServerFactory(protocol.Factory):
         self.app.label.text = "Server started\n"
 
 
+class PeriodicLogger:
+
+    def __init__(self, max_log_in_memory_size = 100):
+        self._log_list = []
+        self._log_current_size = 0
+        self.max_log_in_memory_size = max_log_in_memory_size
+    
+    def push(self, data):
+        if self._log_current_size < self.max_log_in_memory_size:
+            self._log_list.append(data)
+            self._log_current_size += 1
+        else:
+            self._log_list = []
+            self._log_current_size = 0
+
+    def dump(data, file='log/log_for_research'):
+        with open(file, 'a') as l:
+            l.write(data)
+
+        time, player_name, move = None, None, None
+        message = 'time: {time}, player name: {player_name}, move: {move}'.format(
+            time=time,
+            player_name=player_name,
+            move=move,
+        )
+
+
 class GameServerApp(App):
     """
     Game server application with simple GUI.
@@ -100,10 +130,13 @@ class GameServerApp(App):
     button = None
 
     def build(self):
+<<<<<<< HEAD
         player_a_pos = (0, 0)
         player_b_pos = (0, 0)
         shape = [(0, 0), (0.05, 0), (0.1, 0), (0.15, 0), (0.20, 0), (0.25, 0), (0.30, 0), (0.35, 0), (0.4, 0), (0.45, 0), (0.5, 0)]
         self.game_state = GameState(player_a_pos, player_b_pos, shape)
+=======
+>>>>>>> 2076bd22396bb286092d7670c5300ee035de559a
         layout = BoxLayout(orientation="vertical")
         self.label = Label(text="Server started\n")
         self.button = Button(text="Reset", size=(100, 50), size_hint=(1, None))
@@ -116,9 +149,16 @@ class GameServerApp(App):
 
     def start_game(self):
         self.label.text = "Game started\n"
+        player_a_pos = (0, 0)
+        player_b_pos = (0, 0)
+        shape = [(0, 0), (0.1, 0), (0.2, 0), (0.3, 0)]
+        self.game_state = GameState(player_a_pos, player_b_pos, shape)
         self.server_factory.broadcast_object(self.game_state)
 
     def player_move(self, player_name, move):
+        if self.game_state is None:
+            return
+
         self.game_state.update(player_name, move)
         if self.game_state.check_victory_condition():
             self.game_victory()
