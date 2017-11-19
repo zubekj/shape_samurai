@@ -3,6 +3,7 @@
 Created on Sat Nov 18 16:43:39 2017
 
 @author: Paweł Wojtkiewicz
+v0.1
 """
 
 import math, random
@@ -11,11 +12,11 @@ import matplotlib.pyplot as plt
 
 
 def clip(x, amin, amax):
-    if (amin > amax):
+    if amin > amax:
         return x
-    elif (x < amin):
+    elif x < amin:
         return amin
-    elif (x > amax):
+    elif x > amax:
         return amax
     else:
         return x
@@ -52,6 +53,8 @@ def generatePolygon(aveRadius, irregularity, spikeyness, numVerts):
         points.append((x, y))
 
         angle = angle + angleSteps[i]
+        # Input test for verts outside scope.
+
 
     return points
 
