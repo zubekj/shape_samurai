@@ -55,7 +55,6 @@ def generatePolygon(aveRadius, irregularity, spikeyness, numVerts):
         angle = angle + angleSteps[i]
         # Input test for verts outside scope.
 
-
     return points
 
 
@@ -84,16 +83,6 @@ def generatePolygonShapePoints(verts, density):
 
         side_length = (((x1 - x2) ** 2) + ((y1 - y2) ** 2)) ** (1 / 2)
         split_number = math.floor(side_length / density)
-
-        if x1 < x2:
-            x_p = 1
-        else:
-            x_p = -1
-
-        if y1 < y2:
-            y_p = 1
-        else:
-            y_p = -1
 
         next_x = x1
         next_y = y1
