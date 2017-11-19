@@ -14,6 +14,40 @@ import zlib
 
 from game_state import GameState
 
+import logging
+import logging.handlers
+import queue
+import datetime
+
+
+log_format = logging.Formatter('[%(asctime)s] %(levelname)-4s %(name)-4s %(message)s')
+log_format_default = ('[%(asctime)s] %(levelname)-4s %(name)-4s %(message)s')
+
+logging.basicConfig(
+    filename='joint_action_game.log',
+    format=log_format_default,
+    level=logging.INFO,
+)
+
+def message(time, player_name, move):
+    msg = 'time: {time}, player name: {player_name}, move: {move}'.format(
+        time=time,
+        player_name=player_name,
+        move=move,
+    )
+    return msg
+
+que = queue.Queue(-1)  # no limit on size
+handler = logging.FileHandler('joint_action_game.log')
+handler.setFormatter(log_format)
+handler.setLevel(logging.INFO)
+
+listener = logging.handlers.QueueListener(que, handler)
+
+queue_handler = logging.handlers.QueueHandler(que)
+
+root = logging.getLogger()
+root.addHandler(queue_handler)
 
 class GameServer(protocol.Protocol):
     """
@@ -99,33 +133,6 @@ class GameServerFactory(protocol.Factory):
         self.app.label.text = "Server started\n"
 
 
-class PeriodicLogger:
-
-    def __init__(self, max_log_in_memory_size = 100):
-        self._log_list = []
-        self._log_current_size = 0
-        self.max_log_in_memory_size = max_log_in_memory_size
-
-    def push(self, data):
-        if self._log_current_size < self.max_log_in_memory_size:
-            self._log_list.append(data)
-            self._log_current_size += 1
-        else:
-            self._log_list = []
-            self._log_current_size = 0
-
-    def dump(data, file='log/log_for_research'):
-        with open(file, 'a') as l:
-            l.write(data)
-
-        time, player_name, move = None, None, None
-        message = 'time: {time}, player name: {player_name}, move: {move}'.format(
-            time=time,
-            player_name=player_name,
-            move=move,
-        )
-
-
 class GameServerApp(App):
     """
     Game server application with simple GUI.
@@ -142,6 +149,8 @@ class GameServerApp(App):
         self.server_factory = GameServerFactory(self)
         self.button.bind(on_press=self.server_factory.reset_connections)
         reactor.listenTCP(8000, self.server_factory)
+        listener.start()
+        root.info('Building')
         return layout
 
     def start_game(self):
@@ -162,6 +171,8 @@ class GameServerApp(App):
             self.game_victory()
         self.server_factory.broadcast_object(self.game_state)
 
+        root.info(message(datetime.datetime.now(), player_name, move))
+
     def game_victory(self):
         for client in self.server_factory.clients.values():
             client.state = "WAITLOGIN"
@@ -169,7 +180,9 @@ class GameServerApp(App):
 
     def on_stop(self):
         self.server_factory.reset_connections()
+        listener.stop()
         return True
 
 if __name__ == '__main__':
+    root.info('entering main')
     GameServerApp().run()
