@@ -12,12 +12,12 @@ class GameState(object):
     RADIUS = 0.08
     PROGRESS_MARGIN = 5
 
-    def __init__(self, player_a_pos, player_b_pos, shape):
+    def __init__(self, player_a_pos, player_b_pos):
         """ 
         The player list will consist of a position tuple and progress index
         """
-        self.progress_goal = len(self.shape)
         self.shape = generate_shape()
+        self.progress_goal = len(self.shape)
         self.player_dict = {"a": [self.shape[0], 0], "b": [self.shape[0], 0]}
 
     def update(self, player_name, position):

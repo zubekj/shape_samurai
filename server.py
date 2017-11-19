@@ -128,13 +128,6 @@ class GameServerApp(App):
     button = None
 
     def build(self):
-<<<<<<< HEAD
-        player_a_pos = (0, 0)
-        player_b_pos = (0, 0)
-        shape = [(0, 0), (0.05, 0), (0.1, 0), (0.15, 0), (0.20, 0), (0.25, 0), (0.30, 0), (0.35, 0), (0.4, 0), (0.45, 0), (0.5, 0)]
-        self.game_state = GameState(player_a_pos, player_b_pos, shape)
-=======
->>>>>>> 2076bd22396bb286092d7670c5300ee035de559a
         layout = BoxLayout(orientation="vertical")
         self.label = Label(text="Server started\n")
         self.button = Button(text="Reset", size=(100, 50), size_hint=(1, None))
@@ -149,8 +142,7 @@ class GameServerApp(App):
         self.label.text = "Game started\n"
         player_a_pos = (0, 0)
         player_b_pos = (0, 0)
-        shape = [(0, 0), (0.1, 0), (0.2, 0), (0.3, 0)]
-        self.game_state = GameState(player_a_pos, player_b_pos, shape)
+        self.game_state = GameState(player_a_pos, player_b_pos)
         self.server_factory.broadcast_object(self.game_state)
 
     def player_move(self, player_name, move):
