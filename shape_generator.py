@@ -106,7 +106,6 @@ plt.scatter([p[0] for p in verts], [p[1] for p in verts] )
 plt.scatter([p[0] for p in sided_point_5], [p[1] for p in sided_point_5])
 
 
-=======
 def clip(x, min, max):
     if (min > max):
         return x

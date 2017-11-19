@@ -1,7 +1,11 @@
 import math
 import numpy as np
 
-from shape_generator import generate_shape
+#from shape_generator import generate_shape
+
+def generate_shape():
+    shape = [(0, 0), (0.05, 0), (0.1, 0), (0.15, 0), (0.20, 0), (0.25, 0), (0.30, 0), (0.35, 0), (0.4, 0), (0.45, 0), (0.5, 0)]
+    return shape
 
 
 class GameState(object):
@@ -13,7 +17,7 @@ class GameState(object):
     PROGRESS_MARGIN = 5
 
     def __init__(self, player_a_pos, player_b_pos):
-        """ 
+        """
         The player list will consist of a position tuple and progress index
         """
         self.shape = generate_shape()

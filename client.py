@@ -208,6 +208,7 @@ class GameClientApp(App):
         if game_state == "victory":
             RootLayout.label.text = "Victory!"
             self.connection.write(zlib.compress(pickle.dumps("login")))
+            return
         self.root.shape = game_state
         self.root.refresh(game_state)
 
