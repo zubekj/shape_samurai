@@ -1,6 +1,9 @@
 import math
 import numpy as np
 
+from shape_generator import generate_shape
+
+
 class GameState(object):
     """
     GameState represent current state of the game. Game logic is implemented
@@ -13,10 +16,9 @@ class GameState(object):
         """ 
         The player list will consist of a position tuple and progress index
         """
-        
-        self.player_dict = {"a": [player_a_pos, 0], "b": [player_b_pos, 0]}
-        self.shape = shape
         self.progress_goal = len(self.shape)
+        self.shape = generate_shape()
+        self.player_dict = {"a": [self.shape[0], 0], "b": [self.shape[0], 0]}
 
     def update(self, player_name, position):
         player = self.player_dict[player_name]

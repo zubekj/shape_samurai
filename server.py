@@ -11,8 +11,6 @@ from kivy.uix.boxlayout import BoxLayout
 
 import pickle
 import zlib
-import datetime
-from collections import namedtuple
 
 from game_state import GameState
 
@@ -45,7 +43,7 @@ class GameServer(protocol.Protocol):
                     self.name = "b"
                 self.state = "CONNECTED"
                 # No game state should be broadcasted until start_game() is called!
-                #self.factory.broadcast_object(self.factory.app.game_state) 
+                #self.factory.broadcast_object(self.factory.app.game_state)
                 self.factory.app.label.text = "First client connected"
                 if len(self.factory.clients) == 2:
                     self.factory.app.start_game()
