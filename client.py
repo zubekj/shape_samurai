@@ -113,8 +113,8 @@ class RootLayout(BoxLayout):
         self.drawing_container.bind(size=self._update_rect, pos=self._update_rect)
 
     def on_touch_down(self, touch):
-        pos = ((touch.x - 10.0 - self.drawing_container.pos[0]) / self.drawing_container.width,
-               (touch.y - 10.0 - self.drawing_container.pos[1]) / self.drawing_container.height)
+        pos = ((touch.x - self.drawing_container.pos[0]) / self.drawing_container.width,
+               (touch.y - self.drawing_container.pos[1]) / self.drawing_container.height)
         if 0 <= pos[0] <= 1 and 0 <= pos[1] <= 1 and self.shape:
             touch.grab(self)
             self.app.connection.write(zlib.compress(pickle.dumps(pos)))
@@ -122,8 +122,8 @@ class RootLayout(BoxLayout):
         return True
 
     def on_touch_move(self, touch):
-        pos = ((touch.x - 10.0 - self.drawing_container.pos[0]) / self.drawing_container.width,
-               (touch.y - 10.0 - self.drawing_container.pos[1]) / self.drawing_container.height)
+        pos = ((touch.x - self.drawing_container.pos[0]) / self.drawing_container.width,
+               (touch.y - self.drawing_container.pos[1]) / self.drawing_container.height)
         if 0 <= pos[0] <= 1 and 0 <= pos[1] <= 1 and self.shape:
             self.app.connection.write(zlib.compress(pickle.dumps(pos)))
 
@@ -153,9 +153,9 @@ class RootLayout(BoxLayout):
                      self.drawing_container.pos[1] + self.shape.player_dict['b'][0][1] * self.drawing_container.height)
 
             if self.finger:
-                self.finger.pos = a_pos
+                self.finger.pos = (a_pos[0] - 10, a_pos[1] - 10)
                 if self.finger1:
-                    self.finger1.pos = b_pos
+                    self.finger1.pos = (b_pos[0] - 10, b_pos[1] - 10)
             else:
                 color = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
                 with self.drawing_container.canvas:
