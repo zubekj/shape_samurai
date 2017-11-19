@@ -38,22 +38,24 @@ class GameServer(protocol.Protocol):
         moves.
         """
         data = pickle.loads(zlib.decompress(data))
-        if self.state == "WAITLOGIN":
-            if len(self.factory.clients) < 2 and data == "login":
+        if self.state == "WAITLOGIN" and data == "login":
+            if len(self.factory.clients) < 2:
                 if "a" not in self.factory.clients:
                     self.factory.clients["a"] = self
                     self.name = "a"
                 else:
                     self.factory.clients["b"] = self
                     self.name = "b"
-                self.state = "READY"
-                # No game state should be broadcasted until start_game() is called!
-                #self.factory.broadcast_object(self.factory.app.game_state)
-                self.factory.app.label.text = "First client connected"
-                if len(self.factory.clients) == 2:
-                    self.factory.app.start_game()
-            else:
+            elif not self in self.factory.clients.values():
                 self.transport.loseConnection()
+                return
+            
+            self.state = "READY"
+            # No game state should be broadcasted until start_game() is called!
+            #self.factory.broadcast_object(self.factory.app.game_state)
+            #self.factory.app.label.text = "First client connected"
+            if len(self.factory.clients) == 2 and self.factory.clients["a"].state == "READY" and self.factory.clients["b"].state == "READY":
+                self.factory.app.start_game()
         elif self.state == "GAME":
             self.factory.app.player_move(self.name, data)
 
@@ -161,7 +163,6 @@ class GameServerApp(App):
         self.server_factory.broadcast_object(self.game_state)
 
     def game_victory(self):
-        print("Congratulations! Game Victory!")
         for client in self.server_factory.clients.values():
             client.state = "WAITLOGIN"
         self.server_factory.broadcast_object("victory")

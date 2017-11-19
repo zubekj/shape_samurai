@@ -2,6 +2,7 @@ from kivy.graphics.vertex_instructions import Line, Ellipse
 from kivy.support import install_twisted_reactor
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.widget import Widget
+from kivy.core.window import Window
 
 install_twisted_reactor()
 
@@ -67,6 +68,9 @@ class RootLayout(BoxLayout):
         self.finger1 = None
         super(RootLayout, self).__init__(**kwargs)
 
+        self._keyboard = Window.request_keyboard(
+            self._keyboard_closed, self, 'text')
+
         self.add_widget(self.top_layout)
         self.add_widget(self.bottom_layout)
         self.top_layout.add_widget(self.label)
@@ -111,8 +115,17 @@ class RootLayout(BoxLayout):
 
         self.top_layout.height = 200
         self.drawing_container.bind(size=self._update_rect, pos=self._update_rect)
+        self._keyboard.bind(on_key_down=self.key_down)
+
+    def _keyboard_closed(self):
+        self._keyboard.unbind(on_key_down=self._on_keyboard_down)
+        self._keyboard = None
+
+    def key_down(self, keyboard, keycode, text, modifiers):
+        self.app.key_pressed()
 
     def on_touch_down(self, touch):
+        self.app.key_pressed()
         pos = ((touch.x - self.drawing_container.pos[0]) / self.drawing_container.width,
                (touch.y - self.drawing_container.pos[1]) / self.drawing_container.height)
         if 0 <= pos[0] <= 1 and 0 <= pos[1] <= 1 and self.shape:
@@ -131,7 +144,7 @@ class RootLayout(BoxLayout):
         if self.finger:
             self.drawing_container.canvas.remove(self.finger)
             self.finger = None
-
+    
     def refresh(self, value):
         self.line.points = []
         self.line_red.points = []
@@ -184,6 +197,7 @@ class GameClientApp(App):
     """
     connection = None
     popup = None
+    should_restart = True
 
     def build(self):
         self.title = 'Shape Samurai'
@@ -198,16 +212,21 @@ class GameClientApp(App):
     def connect_to_server(self):
         reactor.connectTCP('localhost', 8000, GameClientFactory(self))
 
+    def key_pressed(self):
+        if self.should_restart:
+            self.should_restart = False
+            self.connection.write(zlib.compress(pickle.dumps("login")))
+
     def on_connection(self, connection):
         self.connection = connection
-        self.connection.write(zlib.compress(pickle.dumps("login")))
-        RootLayout.label.text = "Connected"
+        self.should_restart = True
+        RootLayout.label.text = "Connected. Press any key to start the game..."
 
     def update_game(self, game_state):
         RootLayout.label.text = "Game Started"
         if game_state == "victory":
-            RootLayout.label.text = "Victory!"
-            self.connection.write(zlib.compress(pickle.dumps("login")))
+            RootLayout.label.text = "Victory! Press any key to restart..."
+            self.should_restart = True
             return
         self.root.shape = game_state
         self.root.refresh(game_state)
