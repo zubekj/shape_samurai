@@ -49,7 +49,7 @@ class GameServer(protocol.Protocol):
             elif not self in self.factory.clients.values():
                 self.transport.loseConnection()
                 return
-            
+
             self.state = "READY"
             # No game state should be broadcasted until start_game() is called!
             #self.factory.broadcast_object(self.factory.app.game_state)
