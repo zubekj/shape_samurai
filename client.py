@@ -1,4 +1,5 @@
 from kivy.graphics.vertex_instructions import Line, Ellipse
+from kivy.properties import NumericProperty
 from kivy.support import install_twisted_reactor
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.widget import Widget
@@ -60,6 +61,10 @@ class RootLayout(BoxLayout):
     top_layout = AnchorLayout(size_hint=(1, 0.1))
     bottom_layout = AnchorLayout(size_hint=(1, 0.8))
     drawing_container = Widget(size_hint=(0.8, 0.8))
+    clock_display = Label(text='0:00',
+                          font_size=70,
+                          pos_hint={'right': 1})
+
 
     def __init__(self, app, **kwargs):
         self.app = app
@@ -75,6 +80,7 @@ class RootLayout(BoxLayout):
         self.add_widget(self.bottom_layout)
         self.top_layout.add_widget(self.label)
         self.bottom_layout.add_widget(self.drawing_container)
+        self.top_layout.add_widget(self.clock_display)
 
         color = (232.0 / 255.0, 234.0 / 255.0, 246.0 / 255.0)
         color_a = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
@@ -107,11 +113,13 @@ class RootLayout(BoxLayout):
             self.top_ = Rectangle(size=self.top_layout.size,
                                   pos=self.top_layout.pos)
 
-        color = (40.0 / 255.0, 53.0 / 255.0, 147.0 / 255.0)
+        #color = (40.0 / 255.0, 53.0 / 255.0, 147.0 / 255.0)
+        color = (150.0 / 255.0, 150.0 / 255.0, 150.0 / 255.0)
         with self.bottom_layout.canvas.before:
             Color(*color, mode='rgb')
             self.bottom_ = Rectangle(size=self.bottom_layout.size,
-                                     pos=self.bottom_layout.pos)
+                                      pos=self.bottom_layout.pos,
+                                      source='Samurai.png')
 
         self.top_layout.height = 200
         self.drawing_container.bind(size=self._update_rect, pos=self._update_rect)
@@ -191,6 +199,16 @@ class RootLayout(BoxLayout):
         self.refresh(value)
 
 
+class Counter(Label):
+        lbl = NumericProperty(0)
+
+        def __init__(self, **kwargs):
+            super(Counter, self).__init__(**kwargs)
+            Clock.schedule_interval(self._increment_lbl, 1.)
+
+        def _increment_a(self, dt):
+            self.lbl += 1
+
 class GameClientApp(App):
     """
     Game client application with GUI.
@@ -230,6 +248,7 @@ class GameClientApp(App):
             return
         self.root.shape = game_state
         self.root.refresh(game_state)
+        print(Counter.lbl)
 
     def on_stop(self):
         if self.connection is not None:
