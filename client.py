@@ -85,7 +85,6 @@ class RootLayout(BoxLayout):
         counter.add_widget(self.clock_display)
         self.top_layout.add_widget(counter)
         self.bottom_layout.add_widget(self.drawing_container)
-        self.top_layout.add_widget(self.clock_display)
 
         color = (232.0 / 255.0, 234.0 / 255.0, 246.0 / 255.0)
         color_a = (255.0 / 255.0, 0 / 255.0, 0 / 255.0, 0.5)
@@ -210,6 +209,7 @@ class GameClientApp(App):
     connection = None
     popup = None
     should_restart = True
+    in_game = False
 
     def build(self):
         self.title = 'Shape Samurai'
@@ -236,21 +236,21 @@ class GameClientApp(App):
 
     def on_connection(self, connection):
         self.connection = connection
-        self.connection.write(zlib.compress(pickle.dumps("login")))
-        RootLayout.label.text = "Connected"
-        Clock.schedule_interval(self.counting, 1.)
         self.should_restart = True
         RootLayout.label.text = "Connected. Press any key to start the game..."
 
     def update_game(self, game_state):
         RootLayout.label.text = "Game Started"
+        if not self.in_game:
+            self.in_game = True
+            Clock.unschedule(self.counting)
+            Clock.schedule_interval(self.counting, 1.)
+
         if game_state == "victory":
             RootLayout.label.text = "Victory! Press any key to restart..."
             self.should_restart = True
-            RootLayout.label.text = "Victory!"
+            self.in_game = False
             self.connection.write(zlib.compress(pickle.dumps("login")))
-            Clock.unschedule(self.counting)
-            Clock.schedule_interval(self.counting, 1.)
             return
         self.root.shape = game_state
         self.root.refresh(game_state)
