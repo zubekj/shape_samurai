@@ -257,6 +257,8 @@ class GameClientApp(App):
 
         if game_state == "victory":
             RootLayout.label.text = "Victory! Press any key to restart..."
+            Clock.unschedule(self.counting)
+            self.root.clock_display.text = "00"
             self.should_restart = True
             self.in_game = False
             #self.connection.write(zlib.compress(pickle.dumps("login")))
