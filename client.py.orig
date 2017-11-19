@@ -1,9 +1,8 @@
 from kivy.graphics.vertex_instructions import Line, Ellipse
-from kivy.properties import NumericProperty, Clock
+from kivy.properties import NumericProperty
 from kivy.support import install_twisted_reactor
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.widget import Widget
-from kivy.core.window import Window
 
 install_twisted_reactor()
 
@@ -58,11 +57,12 @@ class RootLayout(BoxLayout):
     """
 
     label = Label(text='Waiting for server...')
-    top_layout = BoxLayout(size_hint=(1, 0.1), orientation="horizontal")
+    top_layout = AnchorLayout(size_hint=(1, 0.1))
     bottom_layout = AnchorLayout(size_hint=(1, 0.8))
     drawing_container = Widget(size_hint=(0.8, 0.8))
-    clock_display = Label(text='00',
-                          font_size=50)
+    clock_display = Label(text='0:00',
+                          font_size=70,
+                          pos_hint={'right': 1})
 
 
     def __init__(self, app, **kwargs):
@@ -72,29 +72,15 @@ class RootLayout(BoxLayout):
         self.finger1 = None
         super(RootLayout, self).__init__(**kwargs)
 
-        self._keyboard = Window.request_keyboard(
-            self._keyboard_closed, self, 'text')
-
         self.add_widget(self.top_layout)
         self.add_widget(self.bottom_layout)
-        self.top_layout.add_widget(Widget(size_hint=(0.33, 1.0)))
-        anchor_label = AnchorLayout(size_hint=(0.33, 1.0))
-        anchor_label.add_widget(self.label)
-        self.top_layout.add_widget(anchor_label)
-        counter = AnchorLayout(anchor_x="right", size_hint=(0.34, 1.0))
-        counter.add_widget(self.clock_display)
-        self.top_layout.add_widget(counter)
+        self.top_layout.add_widget(self.label)
         self.bottom_layout.add_widget(self.drawing_container)
+        self.top_layout.add_widget(self.clock_display)
 
-        #color = (232.0 / 255.0, 234.0 / 255.0, 246.0 / 255.0)
-        color = (237.0 / 255.0, 212.0 / 255.0, 157.0 / 255.0, 1)
-        #color_a = (255.0 / 255.0, 0 / 255.0, 0 / 255.0, 0.5)
-        color_a = (3.0 / 255.0, 164.0 / 255.0, 119 / 255.0, 0.7)
-        #color_b = (0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0, 0.5)
-        color_b = (47.0 / 255.0, 23.0 / 255.0, 231.0 / 255.0, 0.5)
-        #color_start = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
-
-
+        color = (232.0 / 255.0, 234.0 / 255.0, 246.0 / 255.0)
+        color_a = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
+        color_b = (0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0)
         with self.canvas:
             Color(*color, mode='rgb')
             self.line = Line(width=5)
@@ -103,12 +89,12 @@ class RootLayout(BoxLayout):
             self.line.joint_precision = 100
 
         with self.canvas.after:
-            Color(*color_b, mode='rgba')
+            Color(*color_b, mode='rgb')
             self.line_green = Line(width=5)
             self.line_green.cap = 'round'
             self.line_green.joint = 'round'
             self.line_green.joint_precision = 100
-            Color(*color_a, mode='rgba')
+            Color(*color_a, mode='rgb')
             self.line_red = Line(width=5)
             self.line_red.cap = 'round'
             self.line_red.joint = 'round'
@@ -128,22 +114,17 @@ class RootLayout(BoxLayout):
         with self.bottom_layout.canvas.before:
             Color(*color, mode='rgb')
             self.bottom_ = Rectangle(size=self.bottom_layout.size,
+<<<<<<< HEAD
                                       pos=self.bottom_layout.pos,
                                       source='Samurai.png')
+=======
+                                     pos=self.bottom_layout.pos)
+>>>>>>> ade6ca97da2c2006fefd68ad3830450f3d9dfaec
 
         self.top_layout.height = 200
         self.drawing_container.bind(size=self._update_rect, pos=self._update_rect)
-        self._keyboard.bind(on_key_down=self.key_down)
-
-    def _keyboard_closed(self):
-        self._keyboard.unbind(on_key_down=self._on_keyboard_down)
-        self._keyboard = None
-
-    def key_down(self, keyboard, keycode, text, modifiers):
-        self.app.key_pressed()
 
     def on_touch_down(self, touch):
-        self.app.key_pressed()
         pos = ((touch.x - self.drawing_container.pos[0]) / self.drawing_container.width,
                (touch.y - self.drawing_container.pos[1]) / self.drawing_container.height)
         if 0 <= pos[0] <= 1 and 0 <= pos[1] <= 1 and self.shape:
@@ -208,14 +189,23 @@ class RootLayout(BoxLayout):
     def _update_rect(self, instance, value):
         self.refresh(value)
 
+
+class Counter(Label):
+        lbl = NumericProperty(0)
+
+        def __init__(self, **kwargs):
+            super(Counter, self).__init__(**kwargs)
+            Clock.schedule_interval(self._increment_lbl, 1.)
+
+        def _increment_a(self, dt):
+            self.lbl += 1
+
 class GameClientApp(App):
     """
     Game client application with GUI.
     """
     connection = None
     popup = None
-    should_restart = True
-    in_game = False
 
     def build(self):
         self.title = 'Shape Samurai'
@@ -230,37 +220,20 @@ class GameClientApp(App):
     def connect_to_server(self):
         reactor.connectTCP('localhost', 8000, GameClientFactory(self))
 
-    def key_pressed(self):
-        if self.should_restart:
-            self.should_restart = False
-            self.connection.write(zlib.compress(pickle.dumps("login")))
-
-    def counting(self, value):
-        current_count = int(self.root.clock_display.text)
-        current_count = current_count + 1
-        self.root.clock_display.text = str(current_count)
-
     def on_connection(self, connection):
         self.connection = connection
-        self.should_restart = True
-        RootLayout.label.text = "Connected. Press any key to start the game..."
+        self.connection.write(zlib.compress(pickle.dumps("login")))
+        RootLayout.label.text = "Connected"
 
     def update_game(self, game_state):
         RootLayout.label.text = "Game Started"
-        if not self.in_game:
-            self.in_game = True
-            Clock.unschedule(self.counting)
-            Clock.schedule_interval(self.counting, 1.)
-
         if game_state == "victory":
-            RootLayout.label.text = "Victory! Press any key to restart..."
-            self.should_restart = True
-            self.in_game = False
+            RootLayout.label.text = "Victory!"
             self.connection.write(zlib.compress(pickle.dumps("login")))
             return
         self.root.shape = game_state
         self.root.refresh(game_state)
-
+        print(Counter.lbl)
 
     def on_stop(self):
         if self.connection is not None:
