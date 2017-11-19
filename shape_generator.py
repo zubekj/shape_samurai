@@ -7,12 +7,6 @@ v1.0
 """
 
 import math, random, numpy
-<<<<<<< HEAD
-#from PIL import *
-#import matplotlib.pyplot as plt
-=======
-
->>>>>>> 4ee72455db15f540c744109f2687f2a5f101d499
 
 
 def clip(x, amin, amax):
@@ -60,14 +54,14 @@ def generatePolygon(aveRadius, irregularity, spikeyness, numVerts):
 
     if((numpy.array(points) > 0.90).any() or (numpy.array(points) < 0.1).any()):
         print ("OUT OF SCOPE")
-        return generatePolygon(aveRadius, irregularity, spikeyness, numVerts)  
-           
+        return generatePolygon(aveRadius, irregularity, spikeyness, numVerts)
+
     return points
 
 
 def generatePolygonShapePoints(verts, density):
     shape_points = []
-    
+
     for i in range(len(verts)):
 
         shape_points.append(verts[i])
@@ -92,7 +86,7 @@ def generatePolygonShapePoints(verts, density):
         split_number = math.floor(side_length / density)
         if (split_number==0):
             continue
-        
+
         next_x = x1
         next_y = y1
 
