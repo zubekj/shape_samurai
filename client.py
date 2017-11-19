@@ -101,7 +101,7 @@ class RootLayout(BoxLayout):
             self.line.joint = 'round'
             self.line.joint_precision = 100
             Color(*color_start_point, mode='rgb')
-            self.start_point = Ellipse(size=(12, 12), pos=(0, 0), group='group')
+            self.start_point = Ellipse(size=(15, 15), pos=(0, 0), group='group')
         
 
         with self.canvas.after:

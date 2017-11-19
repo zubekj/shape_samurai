@@ -31,12 +31,9 @@ class GameState(object):
 
         if player[1] < self.progress_goal and self.check_radius(self.shape[player[1]], position):
             player[1] += 1
-            #print("The progress of player {0} has been increased. Now it is {1}".format(player_name, player[1]))
 
         if self.check_progress(self.player_dict["a"][1], self.player_dict["b"][1]):
             self.reset_progress()
-            print("Players exceeded progress margin! stop being bad and be awesome instead!")
-        
     def reset_progress(self):
         self.player_dict["a"][1] = 0
         self.player_dict["b"][1] = 0
