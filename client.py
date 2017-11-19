@@ -86,12 +86,11 @@ class RootLayout(BoxLayout):
         self.top_layout.add_widget(counter)
         self.bottom_layout.add_widget(self.drawing_container)
 
-        #color = (232.0 / 255.0, 234.0 / 255.0, 246.0 / 255.0)
+        
         color = (237.0 / 255.0, 212.0 / 255.0, 157.0 / 255.0, 1)
-        #color_a = (255.0 / 255.0, 0 / 255.0, 0 / 255.0, 0.5)
-        color_a = (3.0 / 255.0, 164.0 / 255.0, 119 / 255.0, 0.7)
-        #color_b = (0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0, 0.5)
-        color_b = (47.0 / 255.0, 23.0 / 255.0, 231.0 / 255.0, 0.5)
+        color_a = (3.0 / 255.0, 164.0 / 255.0, 119 / 255.0, 0.5)
+        color_b = (172.0 / 255.0, 2 / 255.0, 183.0 / 255.0, 0.5)
+        color_start_point = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
         #color_start = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
 
 
@@ -101,6 +100,9 @@ class RootLayout(BoxLayout):
             self.line.cap = 'round'
             self.line.joint = 'round'
             self.line.joint_precision = 100
+            Color(*color_start_point, mode='rgb')
+            self.start_point = Ellipse(size=(12, 12), pos=(0, 0), group='group')
+        
 
         with self.canvas.after:
             Color(*color_b, mode='rgba')
@@ -182,19 +184,20 @@ class RootLayout(BoxLayout):
 
             b_pos = (self.drawing_container.pos[0] + self.shape.player_dict['b'][0][0] * self.drawing_container.width,
                      self.drawing_container.pos[1] + self.shape.player_dict['b'][0][1] * self.drawing_container.height)
-
+            self.start_point.pos = (self.drawing_container.pos[0] + self.shape.shape[0][0] * self.drawing_container.width - 6,
+                                    self.drawing_container.pos[1] + self.shape.shape[0][1] * self.drawing_container.height - 6)
             if self.finger:
                 self.finger.pos = (a_pos[0] - 10, a_pos[1] - 10)
                 if self.finger1:
                     self.finger1.pos = (b_pos[0] - 10, b_pos[1] - 10)
             else:
-                color = (255.0 / 255.0, 0 / 255.0, 0 / 255.0)
+                color = (3.0 / 255.0, 164.0 / 255.0, 119 / 255.0)
                 with self.drawing_container.canvas:
                     Color(*color, mode='rgb', group='group')
                     self.finger = Ellipse(size=(20, 20), pos=(a_pos[0] - 10, a_pos[1] - 10), group='group')
 
                 if not self.finger1:
-                    color = (0.0 / 255.0, 255.0 / 255.0, 0.0 / 255.0)
+                    color = (172.0 / 255.0, 2 / 255.0, 183.0 / 255.0)
                     with self.drawing_container.canvas:
                         Color(*color, mode='rgb', group='group')
                         self.finger1 = Ellipse(size=(20, 20), pos=(b_pos[0] - 10, b_pos[1] - 10), group='group')
