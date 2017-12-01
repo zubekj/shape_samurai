@@ -1,3 +1,19 @@
-# README #
+# Shape Samurai
 
-This README would normally document whatever steps are necessary to get your application up and running.
+This game designed during AoN Brainhack Warsaw 2017.
+
+Team leader: Julian Zubek
+
+Participants:
+* Juan Camilo Avendaño Diaz
+* Mikołaj Babiak
+* Jakub Kawałko
+* Ilia Kosynkin
+* Michał Kluz
+* Paweł Wojtkiewicz
+
+## Description
+
+## Requirements and installation
+
+## Running
