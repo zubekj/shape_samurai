@@ -11,43 +11,10 @@ from kivy.uix.boxlayout import BoxLayout
 
 import pickle
 import zlib
-
-from game_state import GameState
-
-import logging
-import logging.handlers
-import queue
 import datetime
 
-
-log_format = logging.Formatter('[%(asctime)s] %(levelname)-4s %(name)-4s %(message)s')
-log_format_default = ('[%(asctime)s] %(levelname)-4s %(name)-4s %(message)s')
-
-logging.basicConfig(
-    filename='joint_action_game.log',
-    format=log_format_default,
-    level=logging.INFO,
-)
-
-def message(time, player_name, move):
-    msg = 'time: {time}, player name: {player_name}, move: {move}'.format(
-        time=time,
-        player_name=player_name,
-        move=move,
-    )
-    return msg
-
-que = queue.Queue(-1)  # no limit on size
-handler = logging.FileHandler('joint_action_game.log')
-handler.setFormatter(log_format)
-handler.setLevel(logging.INFO)
-
-listener = logging.handlers.QueueListener(que, handler)
-
-queue_handler = logging.handlers.QueueHandler(que)
-
-root = logging.getLogger()
-root.addHandler(queue_handler)
+from game_state import GameState
+from logger import Logger
 
 class GameServer(protocol.Protocol):
     """
@@ -80,7 +47,7 @@ class GameServer(protocol.Protocol):
                 else:
                     self.factory.clients["b"] = self
                     self.name = "b"
-            elif not self in self.factory.clients.values():
+            elif self not in self.factory.clients.values():
                 self.transport.loseConnection()
                 return
 
@@ -88,7 +55,9 @@ class GameServer(protocol.Protocol):
             # No game state should be broadcasted until start_game() is called!
             #self.factory.broadcast_object(self.factory.app.game_state)
             #self.factory.app.label.text = "First client connected"
-            if len(self.factory.clients) == 2 and self.factory.clients["a"].state == "READY" and self.factory.clients["b"].state == "READY":
+            if (len(self.factory.clients) == 2
+                    and self.factory.clients["a"].state == "READY"
+                    and self.factory.clients["b"].state == "READY"):
                 self.factory.app.start_game()
         elif self.state == "GAME":
             self.factory.app.player_move(self.name, data)
@@ -149,8 +118,8 @@ class GameServerApp(App):
         self.server_factory = GameServerFactory(self)
         self.button.bind(on_press=self.server_factory.reset_connections)
         reactor.listenTCP(8000, self.server_factory)
-        listener.start()
-        root.info('Building')
+        self.logger = Logger()
+        self.logger.log_info("Building server")
         return layout
 
     def start_game(self):
@@ -161,6 +130,7 @@ class GameServerApp(App):
         for client in self.server_factory.clients.values():
             client.state = "GAME"
         self.server_factory.broadcast_object(self.game_state)
+        self.logger.log_info("Game started")
 
     def player_move(self, player_name, move):
         if self.game_state is None:
@@ -170,8 +140,8 @@ class GameServerApp(App):
         if self.game_state.check_victory_condition():
             self.game_victory()
         self.server_factory.broadcast_object(self.game_state)
-
-        root.info(message(datetime.datetime.now(), player_name, move))
+        self.logger.log_info("player: {0}, "
+                             "move: {1}".format(player_name, move))
 
     def game_victory(self):
         for client in self.server_factory.clients.values():
@@ -180,9 +150,8 @@ class GameServerApp(App):
 
     def on_stop(self):
         self.server_factory.reset_connections()
-        listener.stop()
+        self.logger.stop()
         return True
 
 if __name__ == '__main__':
-    root.info('entering main')
     GameServerApp().run()

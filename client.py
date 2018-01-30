@@ -50,7 +50,6 @@ class GameClientFactory(protocol.ClientFactory):
         msg = 'Connection failed: server is not responding.'
 
 
-
 class RootLayout(BoxLayout):
     """
     RootLayout is the main widget of game window. Sprites are drawn here.
@@ -265,7 +264,6 @@ class GameClientApp(App):
             return
         self.root.shape = game_state
         self.root.refresh(game_state)
-
 
     def on_stop(self):
         if self.connection is not None:
