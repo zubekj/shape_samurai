@@ -23,20 +23,21 @@ class GameState(object):
         """
         self.shape = generate_shape()
         self.progress_goal = len(self.shape)
-        self.player_dict = {"a": [self.shape[0], 0], "b": [self.shape[0], 0]}
+        self.players = ([self.shape[0], 0], [self.shape[0], 0])
 
-    def update(self, player_name, position):
-        player = self.player_dict[player_name]
+    def update(self, player_id, position):
+        player = self.players[player_id]
         player[0] = position
 
         if player[1] < self.progress_goal and self.check_radius(self.shape[player[1]], position):
             player[1] += 1
 
-        if self.check_progress(self.player_dict["a"][1], self.player_dict["b"][1]):
+        if self.check_progress(self.players[0][1], self.players[1][1]):
             self.reset_progress()
+
     def reset_progress(self):
-        self.player_dict["a"][1] = 0
-        self.player_dict["b"][1] = 0
+        self.players[0][1] = 0
+        self.players[1][1] = 0
 
     def check_radius(self, checkpoint, position):
         dist = np.linalg.norm(np.array(checkpoint) - np.array(position))
@@ -46,4 +47,4 @@ class GameState(object):
         return abs((progress_a - progress_b)) > self.PROGRESS_MARGIN
 
     def check_victory_condition(self):
-        return (self.player_dict["a"][1] == self.progress_goal) and (self.player_dict["b"][1] == self.progress_goal)
+        return (self.players[0][1] == self.progress_goal) and (self.players[1][1] == self.progress_goal)

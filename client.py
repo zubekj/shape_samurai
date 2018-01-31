@@ -7,7 +7,9 @@ from kivy.core.window import Window
 
 install_twisted_reactor()
 
-from twisted.internet import reactor, protocol
+from twisted.internet import reactor
+from twisted.internet.protocol import ClientFactory
+from twisted.protocols.basic import LineReceiver
 
 from kivy.app import App
 from kivy.uix.label import Label
@@ -16,23 +18,46 @@ from kivy.graphics import Color, Rectangle
 
 import pickle
 import zlib
+import json
 
-class GameClient(protocol.Protocol):
+class GameClientProtocol(LineReceiver):
     """
     GameClient manages active connection to the server.
     """
 
     def __init__(self, factory):
         self.factory = factory
+        self.state = "WAIT"
 
     def connectionMade(self):
-        self.factory.app.on_connection(self.transport)
+        self.factory.app.on_connection(self)
 
-    def dataReceived(self, data):
-        self.factory.app.update_game(pickle.loads(zlib.decompress(data)))
+    def lineReceived(self, line):
+        line = line.decode('utf-8')
+        if self.state == "READY":
+            if line == "start":
+                self.set_game()
+        elif self.state == "GAME":
+            if line == "reset":
+                self.set_wait()
+            else:
+                state = json.loads(line)
+                self.factory.app.update_game(state)
+
+    def set_ready(self):
+        self.state = "READY"
+        self.sendLine("ready".encode('utf-8'))
+
+    def set_wait(self):
+        self.state = "WAIT"
+        self.factory.app.on_reset()
+
+    def set_game(self):
+        self.state = "GAME"
+        self.factory.app.on_game_start()
 
 
-class GameClientFactory(protocol.ClientFactory):
+class GameClientFactory(ClientFactory):
     """
     GameClientFactory opens new connection to the server.
     """
@@ -41,10 +66,10 @@ class GameClientFactory(protocol.ClientFactory):
         self.app = app
 
     def buildProtocol(self, addr):
-        return GameClient(self)
+        return GameClientProtocol(self)
 
     def clientConnectionLost(self, connector, reason):
-        pass
+        print("Conn lost")
 
     def clientConnectionFailed(self, connector, reason):
         msg = 'Connection failed: server is not responding.'
@@ -67,6 +92,7 @@ class RootLayout(BoxLayout):
     def __init__(self, app, **kwargs):
         self.app = app
         self.shape = None
+        self.players = None
         self.finger = None
         self.finger1 = None
         super(RootLayout, self).__init__(**kwargs)
@@ -149,7 +175,7 @@ class RootLayout(BoxLayout):
                (touch.y - self.drawing_container.pos[1]) / self.drawing_container.height)
         if 0 <= pos[0] <= 1 and 0 <= pos[1] <= 1 and self.shape:
             touch.grab(self)
-            self.app.connection.write(zlib.compress(pickle.dumps(pos)))
+            self.app.connection.sendLine("{0},{1}".format(*pos).encode('utf-8'))
 
         return True
 
@@ -157,7 +183,7 @@ class RootLayout(BoxLayout):
         pos = ((touch.x - self.drawing_container.pos[0]) / self.drawing_container.width,
                (touch.y - self.drawing_container.pos[1]) / self.drawing_container.height)
         if 0 <= pos[0] <= 1 and 0 <= pos[1] <= 1 and self.shape:
-            self.app.connection.write(zlib.compress(pickle.dumps(pos)))
+            self.app.connection.sendLine("{0},{1}".format(*pos).encode('utf-8'))
 
     def on_touch_up(self, touch):
         if self.finger:
@@ -169,22 +195,22 @@ class RootLayout(BoxLayout):
         self.line_red.points = []
         self.line_green.points = []
         if self.shape:
-            for index, point in enumerate(self.shape.shape):
+            for index, point in enumerate(self.shape):
                 pos = [self.drawing_container.pos[0] + point[0] * self.drawing_container.width,
                        self.drawing_container.pos[1] + point[1] * self.drawing_container.height]
                 self.line.points += pos
-                if index <= self.shape.player_dict['a'][1]:
+                if index <= self.players[0][1]:
                     self.line_red.points += pos
-                if index <= self.shape.player_dict['b'][1]:
+                if index <= self.players[1][1]:
                     self.line_green.points += pos
 
-            a_pos = (self.drawing_container.pos[0] + self.shape.player_dict['a'][0][0] * self.drawing_container.width,
-                     self.drawing_container.pos[1] + self.shape.player_dict['a'][0][1] * self.drawing_container.height)
+            a_pos = (self.drawing_container.pos[0] + self.players[0][0][0] * self.drawing_container.width,
+                     self.drawing_container.pos[1] + self.players[0][0][1] * self.drawing_container.height)
 
-            b_pos = (self.drawing_container.pos[0] + self.shape.player_dict['b'][0][0] * self.drawing_container.width,
-                     self.drawing_container.pos[1] + self.shape.player_dict['b'][0][1] * self.drawing_container.height)
-            self.start_point.pos = (self.drawing_container.pos[0] + self.shape.shape[0][0] * self.drawing_container.width - 6,
-                                    self.drawing_container.pos[1] + self.shape.shape[0][1] * self.drawing_container.height - 6)
+            b_pos = (self.drawing_container.pos[0] + self.players[1][0][0] * self.drawing_container.width,
+                     self.drawing_container.pos[1] + self.players[1][0][1] * self.drawing_container.height)
+            self.start_point.pos = (self.drawing_container.pos[0] + self.shape[0][0] * self.drawing_container.width - 6,
+                                    self.drawing_container.pos[1] + self.shape[0][1] * self.drawing_container.height - 6)
             if self.finger:
                 self.finger.pos = (a_pos[0] - 10, a_pos[1] - 10)
                 if self.finger1:
@@ -210,32 +236,37 @@ class RootLayout(BoxLayout):
     def _update_rect(self, instance, value):
         self.refresh(value)
 
+
 class GameClientApp(App):
     """
     Game client application with GUI.
     """
     connection = None
     popup = None
-    should_restart = True
+    should_restart = False
     in_game = False
 
     def build(self):
         self.title = 'Shape Samurai'
         root = self.setup_gui()
-        self.connect_to_server()
+
+        with open("client_config.json") as f:
+            config = json.load(f)
+
+        self.connect_to_server(config["host"], config["port"])
         return root
 
     def setup_gui(self):
         self.root = RootLayout(self, orientation='vertical')
         return self.root
 
-    def connect_to_server(self):
-        reactor.connectTCP('localhost', 8000, GameClientFactory(self))
+    def connect_to_server(self, host, port):
+        reactor.connectTCP(host, port, GameClientFactory(self))
 
     def key_pressed(self):
         if self.should_restart:
             self.should_restart = False
-            self.connection.write(zlib.compress(pickle.dumps("login")))
+            self.connection.set_ready()
 
     def counting(self, value):
         current_count = int(self.root.clock_display.text)
@@ -248,26 +279,25 @@ class GameClientApp(App):
         RootLayout.label.text = "Connected. Press any key to start the game..."
 
     def update_game(self, game_state):
-        RootLayout.label.text = "Game Started"
-        if not self.in_game:
-            self.in_game = True
-            Clock.unschedule(self.counting)
-            Clock.schedule_interval(self.counting, 1.)
-
-        if game_state == "victory":
-            RootLayout.label.text = "Victory! Press any key to restart..."
-            Clock.unschedule(self.counting)
-            self.root.clock_display.text = "00"
-            self.should_restart = True
-            self.in_game = False
-            #self.connection.write(zlib.compress(pickle.dumps("login")))
-            return
-        self.root.shape = game_state
+        self.root.shape, self.root.players = game_state
         self.root.refresh(game_state)
+
+    def on_game_start(self):
+        self.in_game = True
+        RootLayout.label.text = "Game Started"
+        Clock.unschedule(self.counting)
+        Clock.schedule_interval(self.counting, 1.)
+
+    def on_reset(self):
+        RootLayout.label.text = "Victory! Press any key to restart..."
+        Clock.unschedule(self.counting)
+        self.root.clock_display.text = "00"
+        self.should_restart = True
+        self.in_game = False
 
     def on_stop(self):
         if self.connection is not None:
-            self.connection.loseConnection()
+            self.connection.transport.loseConnection()
         return True
 
 

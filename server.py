@@ -3,7 +3,9 @@ from kivy.support import install_twisted_reactor
 install_twisted_reactor()
 
 from twisted.internet import reactor
-from twisted.internet import protocol
+from twisted.internet.protocol import Factory
+from twisted.protocols.basic import LineReceiver
+
 from kivy.app import App
 from kivy.uix.label import Label
 from kivy.uix.button import Button
@@ -12,11 +14,12 @@ from kivy.uix.boxlayout import BoxLayout
 import pickle
 import zlib
 import datetime
+import json
 
 from game_state import GameState
 from logger import Logger
 
-class GameServer(protocol.Protocol):
+class GameServerProtocol(LineReceiver):
     """
     GameServer manages single client connection.
 
@@ -28,51 +31,58 @@ class GameServer(protocol.Protocol):
 
     def __init__(self, factory):
         self.factory = factory
-        self.name = None
-        self.state = "WAITLOGIN"
+        # Do not accept connections from more than 2 clients.
+        if len(self.factory.clients) >= 2:
+            self.transport.loseConnection()
+            return
 
-    def dataReceived(self, data):
+        self.name = len(self.factory.clients)
+        self.factory.clients[self.name] = self
+        self.state = "WAIT"
+
+    def lineReceived(self, line):
         """
         Main protocol logic. In state WAITLOGIN server accepts only "login"
         message. After two players login game starts. Messages from client
         after login are interpreted as compressed objects representing player
         moves.
         """
-        data = pickle.loads(zlib.decompress(data))
-        if self.state == "WAITLOGIN" and data == "login":
-            if len(self.factory.clients) < 2:
-                if "a" not in self.factory.clients:
-                    self.factory.clients["a"] = self
-                    self.name = "a"
-                else:
-                    self.factory.clients["b"] = self
-                    self.name = "b"
-            elif self not in self.factory.clients.values():
-                self.transport.loseConnection()
-                return
-
-            self.state = "READY"
-            # No game state should be broadcasted until start_game() is called!
-            #self.factory.broadcast_object(self.factory.app.game_state)
-            #self.factory.app.label.text = "First client connected"
-            if (len(self.factory.clients) == 2
-                    and self.factory.clients["a"].state == "READY"
-                    and self.factory.clients["b"].state == "READY"):
-                self.factory.app.start_game()
+        line = line.decode("utf-8")
+        if self.state == "WAIT":
+            if line == "ready":
+                self.set_ready()
+                #self.factory.app.label.text = "First client connected"
+                if (len(self.factory.clients) == 2
+                        and self.factory.clients[0].state == "READY"
+                        and self.factory.clients[1].state == "READY"):
+                    self.factory.app.start_game()
         elif self.state == "GAME":
-            self.factory.app.player_move(self.name, data)
+            pos = [float(x) for x in line.split(",")]
+            self.factory.app.player_move(self.name, pos)
+
+    def sendLine(self, line):
+        super(self.__class__, self).sendLine(line.encode('utf-8'))
+
+    def send_game_state(self, game_state):
+        state = (game_state.shape, game_state.players)
+        self.sendLine(json.dumps(state))
 
     def connectionLost(self, reason):
         self.factory.reset_connections()
 
-    def send_object(self, obj):
-        """
-        Sends pickled and compressed object to the client.
-        """
-        self.transport.write(zlib.compress(pickle.dumps(obj)))
+    def set_ready(self):
+        self.state = "READY"
+
+    def set_wait(self):
+        self.state = "WAIT"
+        self.sendLine("reset")
+
+    def set_game(self):
+        self.state = "GAME"
+        self.sendLine("start")
 
 
-class GameServerFactory(protocol.Factory):
+class GameServerFactory(Factory):
     """
     GameServerFactory keeps track of active connections and creates
     new GameServer object for each new connection.
@@ -83,21 +93,21 @@ class GameServerFactory(protocol.Factory):
         self.clients = {}
 
     def buildProtocol(self, addr):
-        return GameServer(self)
+        return GameServerProtocol(self)
 
-    def broadcast_object(self, obj):
+    def broadcast_game_state(self, game_state):
         """
-        Broadcasts a Python object to all active clients.
+        Broadcasts a game state to all active clients.
         """
-        for name in self.clients:
-            self.clients[name].send_object(obj)
+        for client in self.clients.values():
+            client.send_game_state(game_state)
 
     def reset_connections(self, *args):
         """
         Disconnects all clients, resets server to an initial state.
         """
-        for client in self.clients:
-            self.clients[client].transport.loseConnection()
+        for client in self.clients.values():
+            client.transport.loseConnection()
         self.clients = {}
         self.app.label.text = "Server started\n"
 
@@ -117,7 +127,11 @@ class GameServerApp(App):
         layout.add_widget(self.button)
         self.server_factory = GameServerFactory(self)
         self.button.bind(on_press=self.server_factory.reset_connections)
-        reactor.listenTCP(8000, self.server_factory)
+
+        with open("server_config.json") as f:
+            config = json.load(f)
+        reactor.listenTCP(config["listenPort"], self.server_factory)
+
         self.logger = Logger()
         self.logger.log_info("Building server")
         return layout
@@ -128,8 +142,8 @@ class GameServerApp(App):
         player_b_pos = (0, 0)
         self.game_state = GameState(player_a_pos, player_b_pos)
         for client in self.server_factory.clients.values():
-            client.state = "GAME"
-        self.server_factory.broadcast_object(self.game_state)
+            client.set_game()
+        self.server_factory.broadcast_game_state(self.game_state)
         self.logger.log_info("Game started")
 
     def player_move(self, player_name, move):
@@ -139,14 +153,13 @@ class GameServerApp(App):
         self.game_state.update(player_name, move)
         if self.game_state.check_victory_condition():
             self.game_victory()
-        self.server_factory.broadcast_object(self.game_state)
+        self.server_factory.broadcast_game_state(self.game_state)
         self.logger.log_info("player: {0}, "
                              "move: {1}".format(player_name, move))
 
     def game_victory(self):
         for client in self.server_factory.clients.values():
-            client.state = "WAITLOGIN"
-        self.server_factory.broadcast_object("victory")
+            client.set_wait()
 
     def on_stop(self):
         self.server_factory.reset_connections()
