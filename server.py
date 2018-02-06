@@ -64,8 +64,7 @@ class GameServerProtocol(LineReceiver):
         super(self.__class__, self).sendLine(line.encode('utf-8'))
 
     def send_game_state(self, game_state):
-        state = (game_state.shape, game_state.players)
-        self.sendLine(json.dumps(state))
+        self.sendLine(json.dumps(game_state))
 
     def connectionLost(self, reason):
         self.factory.reset_connections()
@@ -143,7 +142,9 @@ class GameServerApp(App):
         self.game_state = GameState(player_a_pos, player_b_pos)
         for client in self.server_factory.clients.values():
             client.set_game()
-        self.server_factory.broadcast_game_state(self.game_state)
+        self.server_factory.broadcast_game_state(
+                {"shape": self.game_state.shape,
+                 "players": self.game_state.players})
         self.logger.log_info("Game started")
 
     def player_move(self, player_name, move):
@@ -153,7 +154,8 @@ class GameServerApp(App):
         self.game_state.update(player_name, move)
         if self.game_state.check_victory_condition():
             self.game_victory()
-        self.server_factory.broadcast_game_state(self.game_state)
+        self.server_factory.broadcast_game_state(
+                {"players": self.game_state.players})
         self.logger.log_info("player: {0}, "
                              "move: {1}".format(player_name, move))
 
