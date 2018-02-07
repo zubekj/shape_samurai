@@ -1,7 +1,7 @@
-import math
 import numpy as np
 
 from shape_generator import generatePolygon, generatePolygonShapePoints
+
 
 def generate_shape():
     verts_array = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
@@ -15,36 +15,29 @@ class GameState(object):
     here.
     """
     RADIUS = 0.04
-    PROGRESS_MARGIN = 20
+    PROGRESS_MARGIN = 0.1
 
-    def __init__(self, player_a_pos, player_b_pos):
+    def __init__(self):
         """
         The player list will consist of a position tuple and progress index
         """
-        self.shape = generate_shape()
-        self.progress_goal = len(self.shape)
-        self.players = ([self.shape[0], 0], [self.shape[0], 0])
+        self.shapes = [generate_shape(), generate_shape()]
+        self.players = ([self.shapes[0][0], 0], [self.shapes[1][0], 0])
 
     def update(self, player_id, position):
         player = self.players[player_id]
+        shape = self.shapes[player_id]
         player[0] = position
 
-        if player[1] < self.progress_goal and self.check_radius(self.shape[player[1]], position):
+        if (player[1] < len(shape)
+                and np.linalg.norm(np.array(shape[player[1]])
+                                   - np.array(position)) <= self.RADIUS):
             player[1] += 1
 
-        if self.check_progress(self.players[0][1], self.players[1][1]):
-            self.reset_progress()
+        if abs(self.players[0][1]/len(self.shapes[0])
+               - self.players[1][1]/len(self.shapes[1])) > self.PROGRESS_MARGIN:
+            self.players[0][1] = 0
+            self.players[1][1] = 0
 
-    def reset_progress(self):
-        self.players[0][1] = 0
-        self.players[1][1] = 0
-
-    def check_radius(self, checkpoint, position):
-        dist = np.linalg.norm(np.array(checkpoint) - np.array(position))
-        return dist <= self.RADIUS
-
-    def check_progress(self, progress_a, progress_b):
-        return abs((progress_a - progress_b)) > self.PROGRESS_MARGIN
-
-    def check_victory_condition(self):
-        return (self.players[0][1] == self.progress_goal) and (self.players[1][1] == self.progress_goal)
+        return (self.players[0][1] == len(self.shapes[0])
+                and self.players[1][1] == len(self.shapes[1]))

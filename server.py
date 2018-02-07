@@ -15,6 +15,7 @@ import pickle
 import zlib
 import datetime
 import json
+from math import ceil
 
 from game_state import GameState
 from logger import Logger
@@ -64,7 +65,10 @@ class GameServerProtocol(LineReceiver):
         super(self.__class__, self).sendLine(line.encode('utf-8'))
 
     def send_game_state(self, game_state):
-        self.sendLine(json.dumps(game_state))
+        msg = json.dumps(game_state)
+        for i in range(ceil(float(len(msg))/self.MAX_LENGTH)):
+            self.sendLine(msg[i*self.MAX_LENGTH:(i+1)*self.MAX_LENGTH])
+        self.sendLine("json_end")
 
     def connectionLost(self, reason):
         self.factory.reset_connections()
@@ -137,23 +141,20 @@ class GameServerApp(App):
 
     def start_game(self):
         self.label.text = "Game started\n"
-        player_a_pos = (0, 0)
-        player_b_pos = (0, 0)
-        self.game_state = GameState(player_a_pos, player_b_pos)
+        self.game_state = GameState()
         for client in self.server_factory.clients.values():
             client.set_game()
         self.server_factory.broadcast_game_state(
-                {"shape": self.game_state.shape,
+                {"shapes": self.game_state.shapes,
                  "players": self.game_state.players})
         self.logger.log_info("Game started")
 
     def player_move(self, player_name, move):
         if self.game_state is None:
             return
-
-        self.game_state.update(player_name, move)
-        if self.game_state.check_victory_condition():
+        if self.game_state.update(player_name, move):
             self.game_victory()
+            return
         self.server_factory.broadcast_game_state(
                 {"players": self.game_state.players})
         self.logger.log_info("player: {0}, "
