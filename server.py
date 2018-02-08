@@ -13,7 +13,7 @@ from kivy.uix.boxlayout import BoxLayout
 
 import pickle
 import zlib
-import datetime
+from datetime import datetime
 import json
 from math import ceil
 
@@ -147,8 +147,8 @@ class GameServerApp(App):
         except FileNotFoundError:
             self.shapes = []
         self.current_shape = 0
-
-        self.logger = Logger()
+        log_name = datetime.now().strftime("server_log_%Y-%m-%d_%H:%M:%S.txt")
+        self.logger = Logger(log_name)
         self.logger.log_info("Building server")
 
         reactor.listenTCP(self.config.getint("config", "port"),

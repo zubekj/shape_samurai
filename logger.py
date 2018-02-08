@@ -5,17 +5,17 @@ import queue
 
 class Logger(object):
 
-    def __init__(self):
+    def __init__(self, filename):
         log_format = logging.Formatter('[%(asctime)s] %(levelname)-4s '
                                        '%(name)-4s %(message)s')
         log_format_default = ('[%(asctime)s] %(levelname)-4s %(name)-4s '
                               '%(message)s')
-        logging.basicConfig(filename='joint_action_game.log',
+        logging.basicConfig(filename=filename,
                             format=log_format_default,
                             level=logging.INFO)
 
         que = queue.Queue(-1)  # no limit on size
-        handler = logging.FileHandler('joint_action_game.log')
+        handler = logging.FileHandler(filename)
         handler.setFormatter(log_format)
         handler.setLevel(logging.INFO)
 
