@@ -7,7 +7,7 @@ v1.0
 """
 
 import math, random, numpy
-
+import json
 
 def clip(x, amin, amax):
     if amin > amax:
@@ -99,6 +99,19 @@ def generatePolygonShapePoints(verts, density):
             shape_points.append(next_point)
 
     return shape_points
+
+
+if __name__ == "__main__":
+    shapes = []
+    for _ in range(2):
+        s = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
+        shapes.append((s, s))
+    for _ in range(2):
+        s1 = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
+        s2 = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
+        shapes.append((s1, s2))
+    with open("shape_library.json", "w") as f:
+        json.dump(shapes, f)
 
 #TESTING
 #verts = generatePolygon(aveRadius=0.3, irregularity=10, spikeyness=1000, numVerts=5)

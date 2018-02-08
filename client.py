@@ -37,6 +37,8 @@ class GameClientProtocol(LineReceiver):
         if self.state == "READY":
             if line == "start":
                 self.set_game()
+            elif line == "finish":
+                self.set_finished()
         elif self.state == "GAME":
             if line == "reset":
                 self.set_wait()
@@ -64,6 +66,10 @@ class GameClientProtocol(LineReceiver):
     def set_game(self):
         self.state = "GAME"
         self.factory.app.on_game_start()
+
+    def set_finished(self):
+        self.state = "FINISHED"
+        self.factory.app.on_connection_lost()
 
 
 class GameClientFactory(ClientFactory):
@@ -173,10 +179,14 @@ class GameClientApp(App):
         super(GameClientApp, self).__init__(**kwargs)
         self.title = 'Shape Samurai'
 
+    def build_config(self, config):
+        config.setdefaults('server', {
+            'host': 'localhost',
+            'port': 8000})
+
     def on_start(self):
-        with open("client_config.json") as f:
-            config = json.load(f)
-        self.connect_to_server(config["host"], config["port"])
+        self.connect_to_server(self.config.get("server", "host"),
+                               self.config.getint("server", "port"))
 
     def connect_to_server(self, host, port):
         reactor.connectTCP(host, port, GameClientFactory(self))
@@ -192,12 +202,16 @@ class GameClientApp(App):
     def on_connection(self, connection):
         self.connection = connection
         self.should_restart = True
-        self.root.msg_text = "Connected. Press any key to start the game..."
+        self.root.msg_text = "Touch to start."
 
     def on_connection_lost(self):
         self.root.shapes = None
         self.root.players = None
-        self.root.msg_text = "Connection lost"
+        if (self.connection is not None
+                and self.connection.state == "FINISHED"):
+            self.root.msg_text = "Game finished"
+        else:
+            self.root.msg_text = "Connection lost"
         self.root.refresh_shapes()
         self.root.refresh_players()
         self.root.clock_time = 0
@@ -212,13 +226,14 @@ class GameClientApp(App):
             self.root.refresh_players()
 
     def on_game_start(self):
-        self.root.msg_text = "Game started"
+        self.root.msg_text = "Distance"
         Clock.unschedule(self.counting)
         Clock.schedule_interval(self.counting, 1.)
 
     def on_reset(self):
-        self.root.msg_text = "Victory! Press any key to restart..."
+        self.root.msg_text = "Victory! Touch to start."
         Clock.unschedule(self.counting)
+        self.root.score += int(1.0/((self.root.clock_time/60)**2+1)*20)
         self.root.clock_time = 0
         self.should_restart = True
 

@@ -20,6 +20,7 @@ from math import ceil
 from game_state import GameState
 from logger import Logger
 
+
 class GameServerProtocol(LineReceiver):
     """
     GameServer manages single client connection.
@@ -84,6 +85,10 @@ class GameServerProtocol(LineReceiver):
         self.state = "GAME"
         self.sendLine("start")
 
+    def set_finished(self):
+        self.state = "FINISHED"
+        self.sendLine("finish")
+
 
 class GameServerFactory(Factory):
     """
@@ -122,6 +127,11 @@ class GameServerApp(App):
     label = None
     button = None
 
+    def build_config(self, config):
+        config.setdefaults('config',
+                           {'port': 8000,
+                            'shapes_file': 'shape_library.json'})
+
     def build(self):
         layout = BoxLayout(orientation="vertical")
         self.label = Label(text="Server started\n")
@@ -131,23 +141,37 @@ class GameServerApp(App):
         self.server_factory = GameServerFactory(self)
         self.button.bind(on_press=self.server_factory.reset_connections)
 
-        with open("server_config.json") as f:
-            config = json.load(f)
-        reactor.listenTCP(config["listenPort"], self.server_factory)
+        try:
+            with open(self.config.get("config", "shapes_file")) as f:
+                self.shapes = json.load(f)
+        except FileNotFoundError:
+            self.shapes = []
+        self.current_shape = 0
 
         self.logger = Logger()
         self.logger.log_info("Building server")
+
+        reactor.listenTCP(self.config.getint("config", "port"),
+                          self.server_factory)
         return layout
 
     def start_game(self):
-        self.label.text = "Game started\n"
-        self.game_state = GameState()
+        if self.current_shape >= len(self.shapes):
+            for client in self.server_factory.clients.values():
+                client.set_finished()
+            return
+        shape_a, shape_b = self.shapes[self.current_shape]
+        self.current_shape += 1
+        self.game_state = GameState(shape_a, shape_b)
+
         for client in self.server_factory.clients.values():
             client.set_game()
         self.server_factory.broadcast_game_state(
                 {"shapes": self.game_state.shapes,
                  "players": self.game_state.players})
+
         self.logger.log_info("Game started")
+        self.label.text = "Game started\n"
 
     def player_move(self, player_name, move):
         if self.game_state is None:
