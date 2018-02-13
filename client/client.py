@@ -44,7 +44,7 @@ class GameClientProtocol(LineReceiver):
                 self.msg_buffer += line
 
     def sendLine(self, line):
-        super(self.__class__, self).sendLine(line.encode('utf-8'))
+        LineReceiver.sendLine(self, line.encode('utf-8'))
 
     def send_player_position(self, pos):
         self.sendLine("{0},{1}".format(*pos))
