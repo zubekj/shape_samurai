@@ -1,10 +1,10 @@
-from kivy.graphics.vertex_instructions import Line, Ellipse, SmoothLine
-from kivy.properties import NumericProperty, Clock, ObjectProperty, ListProperty, StringProperty
+import json
+
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.properties import NumericProperty, Clock, ObjectProperty,\
+                            ListProperty, StringProperty
 from kivy.support import install_twisted_reactor
-from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.widget import Widget
-from kivy.uix.effectwidget import EffectWidget, FXAAEffect
-from kivy.core.window import Window
 
 install_twisted_reactor()
 
@@ -12,12 +12,6 @@ from twisted.internet import reactor
 from twisted.internet.protocol import ClientFactory
 from twisted.protocols.basic import LineReceiver
 
-from kivy.app import App
-from kivy.uix.label import Label
-from kivy.uix.boxlayout import BoxLayout
-from kivy.graphics import Color, Rectangle
-
-import json
 
 class GameClientProtocol(LineReceiver):
     """

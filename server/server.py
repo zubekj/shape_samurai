@@ -1,3 +1,11 @@
+import json
+from datetime import datetime
+from math import ceil
+
+from kivy.app import App
+from kivy.uix.label import Label
+from kivy.uix.button import Button
+from kivy.uix.boxlayout import BoxLayout
 from kivy.support import install_twisted_reactor
 
 install_twisted_reactor()
@@ -5,17 +13,6 @@ install_twisted_reactor()
 from twisted.internet import reactor
 from twisted.internet.protocol import Factory
 from twisted.protocols.basic import LineReceiver
-
-from kivy.app import App
-from kivy.uix.label import Label
-from kivy.uix.button import Button
-from kivy.uix.boxlayout import BoxLayout
-
-import pickle
-import zlib
-from datetime import datetime
-import json
-from math import ceil
 
 from game_state import GameState
 from logger import Logger
