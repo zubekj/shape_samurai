@@ -179,12 +179,20 @@ class GameClientApp(App):
             'host': 'localhost',
             'port': 8000})
 
-    def on_start(self):
-        self.connect_to_server(self.config.get("server", "host"),
-                               self.config.getint("server", "port"))
+    def build_settings(self, settings):
+        settings.add_json_panel('Shape Samurai', self.config,
+                                "settings.json")
 
-    def connect_to_server(self, host, port):
-        reactor.connectTCP(host, port, GameClientFactory(self))
+    def on_config_change(self, config, section, key, value):
+        self.connect_to_server()
+
+    def on_start(self):
+        self.connect_to_server()
+
+    def connect_to_server(self):
+        reactor.connectTCP(self.config.get("server", "host"),
+                           self.config.getint("server", "port"),
+                           GameClientFactory(self))
 
     def key_pressed(self):
         if self.should_restart:
@@ -228,7 +236,7 @@ class GameClientApp(App):
     def on_reset(self):
         self.root.msg_text = "Victory! Touch to start."
         Clock.unschedule(self.counting)
-        self.root.score += int(1.0/((self.root.clock_time/60)**2+1)*20)
+        self.root.score += int(1.0/((self.root.clock_time/60.0)**2+1)*20)
         self.root.clock_time = 0
         self.should_restart = True
 
