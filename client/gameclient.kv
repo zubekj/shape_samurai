@@ -5,13 +5,39 @@
 
 RootLayout:
     drawing_container: drawing_container_id
-
     orientation: "vertical" 
+    BoxLayout:
+        orientation: "horizontal"
+        size_hint: 1, None
+        height: 30
+        canvas.before:
+            Color:
+                rgb: color_top
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        Widget:
+            size_hint: 0.2, 1
+        Label:
+            size_hint: 0.6, 1
+            text: root.msg_text
+            font_size: 20
+        AnchorLayout:
+            size_hint: 0.2, 1
+            anchor_x: "right"
+            anchor_y: "top"
+            Button:
+                size_hint: None, None
+                size: 24, 24
+                background_normal: "icons8-menu-24-white.png"
+                background_down: "icons8-menu-24.png"
+                background_color: color_top
+                on_release: root.app.open_settings()
     BoxLayout:
         id: top_layout
         orientation: "horizontal"
         size_hint: 1, None
-        height: 150
+        height: 50
         canvas.before:
             Color:
                 rgb: color_top
@@ -24,37 +50,31 @@ RootLayout:
             Label:
                 text: "Score: {0:03d}".format(root.score)
                 font_size: 24
-        BoxLayout:
-            orientation: "vertical"
-            size_hint: 1.0, 1.0
-            Label:
-                text: root.msg_text
-                font_size: 20
-            Widget:
-                size_hint: 1.0, None
-                height: 10
-                canvas:
-                    Color:
-                        rgb: color_a
-                    Rectangle:
-                        pos: self.x + 0.5*self.width, self.y+5
-                        size: 0.5*self.width*max(0, root.distance*10), 10
-                    Color:
-                        rgb: color_b
-                    Rectangle:
-                        pos: self.x + 0.5*self.width * (1+min(root.distance*10, 0)), self.y+5
-                        size: 0.5*self.width*abs(min(root.distance*10, 0)), 10
-                    Color:
-                        rgb: (0.8, 0.8, 0.8)
-                    Line:
-                        points: self.x + 0.5*self.width, self.y, self.x + 0.5*self.width, self.y+20 
-                        width: 2
-                    Line:
-                        points: self.x, self.y, self.x, self.y+20 
-                        width: 2
-                    Line:
-                        points: self.x + self.width, self.y, self.x + self.width, self.y+20 
-                        width: 2
+        Widget:
+            size_hint: 1.0, None
+            height: 10
+            canvas:
+                Color:
+                    rgb: color_a
+                Rectangle:
+                    pos: self.x + 0.5*self.width, self.y+5
+                    size: 0.5*self.width*max(0, root.distance*10), 10
+                Color:
+                    rgb: color_b
+                Rectangle:
+                    pos: self.x + 0.5*self.width * (1+min(root.distance*10, 0)), self.y+5
+                    size: 0.5*self.width*abs(min(root.distance*10, 0)), 10
+                Color:
+                    rgb: (0.8, 0.8, 0.8)
+                Line:
+                    points: self.x + 0.5*self.width, self.y, self.x + 0.5*self.width, self.y+20 
+                    width: 2
+                Line:
+                    points: self.x, self.y, self.x, self.y+20 
+                    width: 2
+                Line:
+                    points: self.x + self.width, self.y, self.x + self.width, self.y+20 
+                    width: 2
         AnchorLayout:
             size_hint: 0.2, 1.0
             anchor_x: "right"

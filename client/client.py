@@ -83,6 +83,7 @@ class GameClientFactory(ClientFactory):
     def clientConnectionFailed(self, connector, reason):
         msg = 'Connection failed: server is not responding.'
         self.app.root.msg_text = msg
+        Clock.schedule_once(lambda _: self.app.connect_to_server(), 1.)
 
 
 class RootLayout(BoxLayout):
@@ -122,7 +123,7 @@ class RootLayout(BoxLayout):
     def on_touch_down(self, touch):
         self.app.key_pressed()
         self.on_touch_move(touch)
-        return True
+        super(BoxLayout, self).on_touch_down(touch)
 
     def on_touch_move(self, touch):
         pos = self.from_screen_coords(touch.x, touch.y)
@@ -190,9 +191,10 @@ class GameClientApp(App):
         self.connect_to_server()
 
     def connect_to_server(self):
-        reactor.connectTCP(self.config.get("server", "host"),
-                           self.config.getint("server", "port"),
-                           GameClientFactory(self))
+        if self.connection is None:
+            reactor.connectTCP(self.config.get("server", "host"),
+                               self.config.getint("server", "port"),
+                               GameClientFactory(self))
 
     def key_pressed(self):
         if self.should_restart:
