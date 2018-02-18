@@ -32,7 +32,8 @@ class GameServerProtocol(LineReceiver):
         self.factory = factory
         # Do not accept connections from more than 2 clients.
         if len(self.factory.clients) >= 2:
-            self.transport.loseConnection()
+            if self.transport is not None:
+                self.transport.loseConnection()
             return
 
         self.name = len(self.factory.clients)
@@ -136,21 +137,24 @@ class GameServerApp(App):
         layout.add_widget(self.label)
         layout.add_widget(self.button)
         self.server_factory = GameServerFactory(self)
-        self.button.bind(on_press=self.server_factory.reset_connections)
+        self.button.bind(on_press=self.restart_server)
 
         try:
             with open(self.config.get("config", "shapes_file")) as f:
                 self.shapes = json.load(f)
         except FileNotFoundError:
             self.shapes = []
+        self.restart_server()
+        reactor.listenTCP(self.config.getint("config", "port"),
+                          self.server_factory)
+        return layout
+
+    def restart_server(self, *args):
+        self.server_factory.reset_connections()
         self.current_shape = 0
         log_name = datetime.now().strftime("server_log_%Y-%m-%d_%H:%M:%S.txt")
         self.logger = Logger(log_name)
         self.logger.log_info("Building server")
-
-        reactor.listenTCP(self.config.getint("config", "port"),
-                          self.server_factory)
-        return layout
 
     def start_game(self):
         if self.current_shape >= len(self.shapes):
