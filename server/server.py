@@ -70,7 +70,7 @@ class GameServerProtocol(LineReceiver):
         self.sendLine("json_end")
 
     def connectionLost(self, reason):
-        self.factory.reset_connections()
+        self.factory.app.restart_server()
 
     def set_ready(self):
         self.state = "READY"

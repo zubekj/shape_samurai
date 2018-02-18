@@ -154,8 +154,8 @@ class RootLayout(BoxLayout):
         self.progress_b = self.players[1][1]
         a_pos = self.to_screen_coords(self.players[0][0])
         b_pos = self.to_screen_coords(self.players[1][0])
-        self.cursor_a = (a_pos[0] - 10, a_pos[1] - 10)
-        self.cursor_b = (b_pos[0] - 10, b_pos[1] - 10)
+        self.cursor_a = (a_pos[0], a_pos[1])
+        self.cursor_b = (b_pos[0], b_pos[1])
         self.distance = (float(self.players[0][1])/len(self.shapes[0])
                          - float(self.players[1][1])/len(self.shapes[1]))
 

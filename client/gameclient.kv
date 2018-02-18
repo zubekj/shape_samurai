@@ -1,6 +1,8 @@
 #:set color_line (237.0 / 255.0, 212.0 / 255.0, 157.0 / 255.0, 1)
 #:set color_a (3.0 / 255.0, 164.0 / 255.0, 119 / 255.0, 0.5)
 #:set color_b (172.0 / 255.0, 2 / 255.0, 183.0 / 255.0, 0.5)
+#:set color_a1 (3.0 / 255.0, 164.0 / 255.0, 119 / 255.0, 1)
+#:set color_b1 (172.0 / 255.0, 2 / 255.0, 183.0 / 255.0, 1)
 #:set color_top (26.0 / 255.0, 35.0 / 255.0, 126.0 / 255.0)
 
 RootLayout:
@@ -99,34 +101,24 @@ RootLayout:
                     rgb: color_line
                 Line:
                     points: root.line_a
-                    width: 5
+                    width: 10
                     cap: "round"
                     joint: "round"
                     joint_precision: 100
                     close: True
                 Line:
                     points: root.line_b
-                    width: 5
+                    width: 10
                     cap: "round"
                     joint: "round"
                     joint_precision: 100
                     close: True
-                Color:
-                    rgba: color_a
-                Line:
-                    points: root.line_a[:6] if len(root.line_a) >= 6 else []
-                    width: 2
-                Color:
-                    rgba: color_b
-                Line:
-                    points: root.line_b[:6] if len(root.line_b) >= 6 else []
-                    width: 2
             canvas.after:
                 Color:
                     rgba: color_a
                 Line:
                     points: root.line_a[:root.progress_a*2]
-                    width: 5
+                    width: 10
                     cap: "round"
                     joint: "round"
                     joint_precision: 100
@@ -134,17 +126,28 @@ RootLayout:
                     rgba: color_b
                 Line:
                     points: root.line_b[:root.progress_b*2]
-                    width: 5
+                    width: 10
                     cap: "round"
                     joint: "round"
                     joint_precision: 100
                 Color:
                     rgba: color_a
                 Ellipse:
-                    pos: root.cursor_a
-                    size: 20, 20
+                    pos: root.cursor_a[0]-15, root.cursor_a[1]-15
+                    size: 30, 30
                 Color:
                     rgba: color_b
                 Ellipse:
-                    pos: root.cursor_b
-                    size: 20, 20
+                    pos: root.cursor_b[0]-15, root.cursor_b[1]-15
+                    size: 30, 30
+                Color:
+                    rgba: color_a1
+                Rectangle:
+                    pos: (root.line_a[root.progress_a*2-2]-15, root.line_a[root.progress_a*2-1]-15) if len(root.line_a) >= 2 else (0,0)
+                    size: 30, 30
+                Color:
+                    rgba: color_b1
+                Rectangle:
+                    pos: (root.line_b[root.progress_b*2-2]-15, root.line_b[root.progress_b*2-1]-15) if len(root.line_b) >= 2 else (0,0)
+                    size: 30, 30
+
