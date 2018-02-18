@@ -60,12 +60,12 @@ RootLayout:
                     rgb: color_a
                 Rectangle:
                     pos: self.x + 0.5*self.width, self.y+5
-                    size: 0.5*self.width*max(0, root.distance*10), 10
+                    size: 0.5*self.width*max(0, root.distance*5), 10
                 Color:
                     rgb: color_b
                 Rectangle:
-                    pos: self.x + 0.5*self.width * (1+min(root.distance*10, 0)), self.y+5
-                    size: 0.5*self.width*abs(min(root.distance*10, 0)), 10
+                    pos: self.x + 0.5*self.width * (1+min(root.distance*5, 0)), self.y+5
+                    size: 0.5*self.width*abs(min(root.distance*5, 0)), 10
                 Color:
                     rgb: (0.8, 0.8, 0.8)
                 Line:
@@ -93,7 +93,7 @@ RootLayout:
                 source: "Samurai.png"
         Widget:
             id: drawing_container_id
-            size_hint: 0.8, 0.8
+            size_hint: 0.9, 0.9
             on_pos: root.refresh_players() or root.refresh_shapes()
             on_size: root.refresh_players() or root.refresh_shapes()
             canvas:

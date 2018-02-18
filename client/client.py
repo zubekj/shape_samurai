@@ -127,7 +127,8 @@ class RootLayout(BoxLayout):
 
     def on_touch_move(self, touch):
         pos = self.from_screen_coords(touch.x, touch.y)
-        if 0 <= pos[0] <= 1 and 0 <= pos[1] <= 1 and self.shapes:
+        mrg = 0.04
+        if -mrg <= pos[0] <= 1+mrg and -mrg <= pos[1] <= 1+mrg and self.shapes:
             self.app.connection.send_player_position(pos)
 
     def refresh_shapes(self):
