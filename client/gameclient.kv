@@ -131,23 +131,13 @@ RootLayout:
                     joint: "round"
                     joint_precision: 100
                 Color:
-                    rgba: color_a
-                Ellipse:
-                    pos: root.cursor_a[0]-15, root.cursor_a[1]-15
-                    size: 30, 30
-                Color:
-                    rgba: color_b
-                Ellipse:
-                    pos: root.cursor_b[0]-15, root.cursor_b[1]-15
-                    size: 30, 30
-                Color:
                     rgba: color_a1
                 Rectangle:
-                    pos: (root.line_a[root.progress_a*2-2]-15, root.line_a[root.progress_a*2-1]-15) if len(root.line_a) >= 2 else (0,0)
-                    size: 30, 30
+                    pos: (root.line_a[root.progress_a*2-2]-20, root.line_a[root.progress_a*2-1]-20) if len(root.line_a) >= 2 else (0,0)
+                    size: 40, 40
                 Color:
                     rgba: color_b1
                 Rectangle:
-                    pos: (root.line_b[root.progress_b*2-2]-15, root.line_b[root.progress_b*2-1]-15) if len(root.line_b) >= 2 else (0,0)
-                    size: 30, 30
+                    pos: (root.line_b[root.progress_b*2-2]-20, root.line_b[root.progress_b*2-1]-20) if len(root.line_b) >= 2 else (0,0)
+                    size: 40, 40
 
