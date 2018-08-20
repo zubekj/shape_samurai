@@ -1,6 +1,8 @@
 import json
 
 from kivy.app import App
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import NumericProperty, Clock, ObjectProperty,\
                             ListProperty, StringProperty
@@ -51,7 +53,7 @@ class GameClientProtocol(LineReceiver):
 
     def set_ready(self):
         self.state = "READY"
-        self.sendLine("ready")
+        self.sendLine("ready {0}".format(self.factory.app.player_name))
 
     def set_wait(self):
         self.state = "WAIT"
@@ -107,6 +109,15 @@ class RootLayout(BoxLayout):
         self.app = App.get_running_app()
         self.players = None
         self.shapes = None
+        lbl = Label(text="Touch to start", font_size="32sp", halign="center")
+
+        def set_label_text(*args):
+            lbl.text = self.msg_text
+
+        self.bind(msg_text=set_label_text)
+        self.popup = Popup(title="", content=lbl, auto_dismiss=False,
+                           size_hint=(0.5, 0.5))
+        self.popup.bind(on_touch_down=lambda *args: self.app.key_pressed())
         super(RootLayout, self).__init__(**kwargs)
 
     def to_screen_coords(self, pos, shift_x=0, shift_y=0):
@@ -175,13 +186,15 @@ class GameClientApp(App):
         self.title = 'Shape Samurai'
 
     def build_config(self, config):
-        config.setdefaults('server', {
+        config.setdefaults('config', {
             'host': 'localhost',
-            'port': 8000})
+            'port': 8000,
+            'name': 'player_A'})
 
     def on_start(self):
-        self.connect_to_server(self.config.get("server", "host"),
-                               self.config.getint("server", "port"))
+        self.player_name = self.config.get("config", "name")
+        self.connect_to_server(self.config.get("config", "host"),
+                               self.config.getint("config", "port"))
 
     def connect_to_server(self, host, port):
         reactor.connectTCP(host, port, GameClientFactory(self))
@@ -197,7 +210,8 @@ class GameClientApp(App):
     def on_connection(self, connection):
         self.connection = connection
         self.should_restart = True
-        self.root.msg_text = "Touch to start."
+        self.root.msg_text = "Connected\nTouch to start"
+        self.root.popup.open()
 
     def on_connection_lost(self):
         self.root.shapes = None
@@ -205,6 +219,7 @@ class GameClientApp(App):
         if (self.connection is not None
                 and self.connection.state == "FINISHED"):
             self.root.msg_text = "Game finished"
+            self.root.popup.dismiss()
         else:
             self.root.msg_text = "Connection lost"
         self.root.refresh_shapes()
@@ -222,11 +237,13 @@ class GameClientApp(App):
 
     def on_game_start(self):
         self.root.msg_text = "Distance"
+        self.root.popup.dismiss()
         Clock.unschedule(self.counting)
         Clock.schedule_interval(self.counting, 1.)
 
     def on_reset(self):
-        self.root.msg_text = "Victory! Touch to start."
+        self.root.msg_text = "Victory!\nTouch to start"
+        self.root.popup.open()
         Clock.unschedule(self.counting)
         self.root.score += int(1.0/((self.root.clock_time/60)**2+1)*20)
         self.root.clock_time = 0

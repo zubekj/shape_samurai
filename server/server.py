@@ -3,9 +3,12 @@ from datetime import datetime
 from math import ceil
 
 from kivy.app import App
+from kivy.uix.widget import Widget
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.popup import Popup
 from kivy.support import install_twisted_reactor
 
 install_twisted_reactor()
@@ -35,21 +38,22 @@ class GameServerProtocol(LineReceiver):
             self.transport.loseConnection()
             return
 
-        self.name = len(self.factory.clients)
-        self.factory.clients[self.name] = self
+        self.id = len(self.factory.clients)
+        self.factory.clients[self.id] = self
         self.state = "WAIT"
 
     def lineReceived(self, line):
         """
-        Main protocol logic. In state WAITLOGIN server accepts only "login"
+        Main protocol logic. In state WAITLOGIN server accepts only "ready"
         message. After two players login game starts. Messages from client
         after login are interpreted as compressed objects representing player
         moves.
         """
         line = line.decode("utf-8")
         if self.state == "WAIT":
-            if line == "ready":
+            if line[:5] == "ready":
                 self.set_ready()
+                self.name = line[6:]
                 #self.factory.app.label.text = "First client connected"
                 if (len(self.factory.clients) == 2
                         and self.factory.clients[0].state == "READY"
@@ -57,7 +61,7 @@ class GameServerProtocol(LineReceiver):
                     self.factory.app.start_game()
         elif self.state == "GAME":
             pos = [float(x) for x in line.split(",")]
-            self.factory.app.player_move(self.name, pos)
+            self.factory.app.player_move(self.id, self.name, pos)
 
     def sendLine(self, line):
         super(self.__class__, self).sendLine(line.encode('utf-8'))
@@ -114,7 +118,7 @@ class GameServerFactory(Factory):
         for client in self.clients.values():
             client.transport.loseConnection()
         self.clients = {}
-        self.app.label.text = "Server started\n"
+        self.app.label.text = "Server started"
 
 
 class GameServerApp(App):
@@ -130,12 +134,33 @@ class GameServerApp(App):
                             'shapes_file': 'shape_library.json'})
 
     def build(self):
-        layout = BoxLayout(orientation="vertical")
-        self.label = Label(text="Server started\n")
-        self.button = Button(text="Reset", size=(100, 50), size_hint=(1, None))
-        layout.add_widget(self.label)
-        layout.add_widget(self.button)
+        self.layout = BoxLayout(orientation="vertical")
+        self.label = Label(text="Enter session name", size=(100, 50),
+                           size_hint=(1, None))
+        self.session_text = TextInput(text='XXX', multiline=False,
+                                      size=(100, 50), size_hint=(.8, None),
+                                      pos_hint={"center_x": 0.5})
+        self.button = Button(text="Start server", size=(200, 50),
+                             size_hint=(None, None), pos_hint={"center_x": 0.5})
+        self.layout.add_widget(Widget(size_hint=(1, 1)))
+        self.layout.add_widget(self.label)
+        self.layout.add_widget(self.session_text)
+        self.layout.add_widget(self.button)
+        self.layout.add_widget(Widget(size_hint=(1, 1)))
         self.server_factory = GameServerFactory(self)
+        self.button.bind(on_press=self.start_server)
+
+        return self.layout
+
+    def start_server(self, *args):
+        session_name = self.session_text.text
+        if len(session_name) == 0:
+            return
+
+        self.label.text = "Server started"
+        self.layout.remove_widget(self.session_text)
+        self.button.text = "Reset connections"
+        self.button.unbind(on_press=self.start_server)
         self.button.bind(on_press=self.server_factory.reset_connections)
 
         try:
@@ -144,18 +169,19 @@ class GameServerApp(App):
         except FileNotFoundError:
             self.shapes = []
         self.current_shape = 0
-        log_name = datetime.now().strftime("server_log_%Y-%m-%d_%H:%M:%S.txt")
+        log_name = datetime.now().strftime("{0}_%Y-%m-%d_%H:%M:%S.txt".format(session_name))
         self.logger = Logger(log_name)
-        self.logger.log_info("Building server")
+        self.logger.log_info("Building server, shape file {0}".format(
+            self.config.get("config", "shapes_file")))
 
         reactor.listenTCP(self.config.getint("config", "port"),
                           self.server_factory)
-        return layout
 
     def start_game(self):
         if self.current_shape >= len(self.shapes):
             for client in self.server_factory.clients.values():
                 client.set_finished()
+            self.logger.log_info("Game finished")
             return
         shape_a, shape_b = self.shapes[self.current_shape]
         self.current_shape += 1
@@ -167,19 +193,21 @@ class GameServerApp(App):
                 {"shapes": self.game_state.shapes,
                  "players": self.game_state.players})
 
-        self.logger.log_info("Game started")
-        self.label.text = "Game started\n"
+        text = "Game started, shape {0}/{1}".format(self.current_shape,
+                                                    len(self.shapes))
+        self.logger.log_info(text)
+        self.label.text = text
 
-    def player_move(self, player_name, move):
+    def player_move(self, player_id, player_name, move):
         if self.game_state is None:
             return
-        if self.game_state.update(player_name, move):
+        if self.game_state.update(player_id, move):
             self.game_victory()
             return
         self.server_factory.broadcast_game_state(
                 {"players": self.game_state.players})
-        self.logger.log_info("player: {0}, "
-                             "move: {1}".format(player_name, move))
+        self.logger.log_info("player: {0}-{1}, "
+                             "move: {2}".format(player_id, player_name, move))
 
     def game_victory(self):
         for client in self.server_factory.clients.values():
