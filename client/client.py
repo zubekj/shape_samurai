@@ -85,6 +85,7 @@ class GameClientFactory(ClientFactory):
     def clientConnectionFailed(self, connector, reason):
         msg = 'Connection failed: server is not responding.'
         self.app.root.msg_text = msg
+        Clock.schedule_once(lambda _: self.app.connect_to_server(), 1.)
 
 
 class RootLayout(BoxLayout):
@@ -109,14 +110,10 @@ class RootLayout(BoxLayout):
         self.app = App.get_running_app()
         self.players = None
         self.shapes = None
-        lbl = Label(text="Touch to start", font_size="32sp", halign="center")
-
-        def set_label_text(*args):
-            lbl.text = self.msg_text
-
-        self.bind(msg_text=set_label_text)
-        self.popup = Popup(title="", content=lbl, auto_dismiss=False,
-                           size_hint=(0.5, 0.5))
+        self.popup_label = Label(text="Touch to start", font_size="32sp",
+                                 halign="center")
+        self.popup = Popup(title="", content=self.popup_label,
+                           auto_dismiss=False, size_hint=(0.5, 0.5))
         self.popup.bind(on_touch_down=lambda *args: self.app.key_pressed())
         super(RootLayout, self).__init__(**kwargs)
 
@@ -133,11 +130,12 @@ class RootLayout(BoxLayout):
     def on_touch_down(self, touch):
         self.app.key_pressed()
         self.on_touch_move(touch)
-        return True
+        super(BoxLayout, self).on_touch_down(touch)
 
     def on_touch_move(self, touch):
         pos = self.from_screen_coords(touch.x, touch.y)
-        if 0 <= pos[0] <= 1 and 0 <= pos[1] <= 1 and self.shapes:
+        mrg = 0.04
+        if -mrg <= pos[0] <= 1+mrg and -mrg <= pos[1] <= 1+mrg and self.shapes:
             self.app.connection.send_player_position(pos)
 
     def refresh_shapes(self):
@@ -164,8 +162,8 @@ class RootLayout(BoxLayout):
         self.progress_b = self.players[1][1]
         a_pos = self.to_screen_coords(self.players[0][0])
         b_pos = self.to_screen_coords(self.players[1][0])
-        self.cursor_a = (a_pos[0] - 10, a_pos[1] - 10)
-        self.cursor_b = (b_pos[0] - 10, b_pos[1] - 10)
+        self.cursor_a = (a_pos[0], a_pos[1])
+        self.cursor_b = (b_pos[0], b_pos[1])
         self.distance = (float(self.players[0][1])/len(self.shapes[0])
                          - float(self.players[1][1])/len(self.shapes[1]))
 
@@ -191,13 +189,22 @@ class GameClientApp(App):
             'port': 8000,
             'name': 'player_A'})
 
+    def build_settings(self, settings):
+        settings.add_json_panel('Shape Samurai', self.config,
+                                "settings.json")
+
+    def on_config_change(self, config, section, key, value):
+        self.connect_to_server()
+
     def on_start(self):
         self.player_name = self.config.get("config", "name")
-        self.connect_to_server(self.config.get("config", "host"),
-                               self.config.getint("config", "port"))
+        self.connect_to_server()
 
-    def connect_to_server(self, host, port):
-        reactor.connectTCP(host, port, GameClientFactory(self))
+    def connect_to_server(self):
+        if self.connection is None:
+            reactor.connectTCP(self.config.get("config", "host"),
+                               self.config.getint("config", "port"),
+                               GameClientFactory(self))
 
     def key_pressed(self):
         if self.should_restart:
@@ -210,7 +217,8 @@ class GameClientApp(App):
     def on_connection(self, connection):
         self.connection = connection
         self.should_restart = True
-        self.root.msg_text = "Connected\nTouch to start"
+        self.root.msg_text = "Connected"
+        self.root.popup_label.text = "Connected\nTouch to start"
         self.root.popup.open()
 
     def on_connection_lost(self):
@@ -242,10 +250,11 @@ class GameClientApp(App):
         Clock.schedule_interval(self.counting, 1.)
 
     def on_reset(self):
-        self.root.msg_text = "Victory!\nTouch to start"
+        self.root.msg_text = "Victory!"
+        self.root.popup_label.text = "Victory!\nTouch to start"
         self.root.popup.open()
         Clock.unschedule(self.counting)
-        self.root.score += int(1.0/((self.root.clock_time/60)**2+1)*20)
+        self.root.score += int(1.0/((self.root.clock_time/60.0)**2+1)*20)
         self.root.clock_time = 0
         self.should_restart = True
 
@@ -254,6 +263,11 @@ class GameClientApp(App):
             self.connection.transport.loseConnection()
         return True
 
+    def on_pause(self):
+        return True
+
+    def on_resume(self):
+        pass
 
 if __name__ == '__main__':
     GameClientApp().run()

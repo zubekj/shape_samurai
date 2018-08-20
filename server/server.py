@@ -23,7 +23,7 @@ from logger import Logger
 
 class GameServerProtocol(LineReceiver):
     """
-    GameServer manages single client connection.
+    GameServerProtocol manages a single client connection.
 
     Posible states:
         * WAITLOGIN -- connection established, waiting for "login" message
@@ -31,11 +31,14 @@ class GameServerProtocol(LineReceiver):
         * GAME -- client during gameplay
     """
 
-    def __init__(self, factory):
-        self.factory = factory
+    def __init__(self):
+        super(LineReceiver, self).__init__()
+
+    def connectionMade(self):
         # Do not accept connections from more than 2 clients.
         if len(self.factory.clients) >= 2:
-            self.transport.loseConnection()
+            if self.transport is not None:
+                self.transport.loseConnection()
             return
 
         self.id = len(self.factory.clients)
@@ -102,7 +105,9 @@ class GameServerFactory(Factory):
         self.clients = {}
 
     def buildProtocol(self, addr):
-        return GameServerProtocol(self)
+        protocol = GameServerProtocol()
+        protocol.factory = self
+        return protocol
 
     def broadcast_game_state(self, game_state):
         """

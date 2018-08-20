@@ -1,0 +1,19 @@
+[
+      { "type": "title",
+        "title": "Shape Samurai" },
+
+      { "type": "string",
+        "title": "Server address",
+        "section": "config",
+        "key": "host" },
+
+      { "type": "numeric",
+        "title": "Server port",
+        "section": "config",
+        "key": "port" },
+
+      { "type": "string",
+        "title": "Player name",
+        "section": "config",
+        "key": "name"}
+]

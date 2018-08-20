@@ -7,7 +7,7 @@ class GameState(object):
     here.
     """
     RADIUS = 0.04
-    PROGRESS_MARGIN = 0.1
+    PROGRESS_MARGIN = 0.2
 
     def __init__(self, shape_a, shape_b):
         """
