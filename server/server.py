@@ -154,7 +154,8 @@ class GameServerApp(App):
         self.layout.add_widget(Widget(size_hint=(1, 1)))
         self.server_factory = GameServerFactory(self)
         self.button.bind(on_press=self.start_server)
-
+        self.logger = None
+        
         return self.layout
 
     def start_server(self, *args):
@@ -220,7 +221,8 @@ class GameServerApp(App):
 
     def on_stop(self):
         self.server_factory.reset_connections()
-        self.logger.stop()
+        if self.logger is not None:
+            self.logger.stop()
         return True
 
 if __name__ == '__main__':
