@@ -11,6 +11,10 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
 from kivy.support import install_twisted_reactor
 
+# fix for pyinstaller packages app to avoid ReactorAlreadyInstalledError
+import sys
+if 'twisted.internet.reactor' in sys.modules:
+    del sys.modules['twisted.internet.reactor']
 install_twisted_reactor()
 
 from twisted.internet import reactor
