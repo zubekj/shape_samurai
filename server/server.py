@@ -179,7 +179,7 @@ class GameServerApp(App):
         except FileNotFoundError:
             self.shapes = []
         self.current_shape = 0
-        log_name = "{0}".format(session_name)
+        log_name = "{0}.txt".format(session_name)
         self.logger = Logger(log_name)
         self.logger.log_info("Building server, shape file {0}".format(
             self.config.get("config", "shapes_file")))
