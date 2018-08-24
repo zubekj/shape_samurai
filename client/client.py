@@ -35,7 +35,8 @@ class GameClientProtocol(LineReceiver):
     def lineReceived(self, line):
         line = line.decode('utf-8')
         if self.state == "READY":
-            if line == "start":
+            if line[:5] == "start":
+                self.factory.app.root.player_id = line[6]
                 self.set_game()
             elif line == "finish":
                 self.set_finished()
@@ -101,14 +102,14 @@ class RootLayout(BoxLayout):
     clock_time = NumericProperty(0)
     score = NumericProperty(0)
     msg_text = StringProperty("Waiting for server")
-    line_a = ListProperty([])
-    line_b = ListProperty([])
+    line_a = ListProperty([0, 0])
+    line_b = ListProperty([0, 0])
     progress_a = NumericProperty(0)
     progress_b = NumericProperty(0)
-    line_green = ListProperty([])
     cursor_a = ListProperty((0, 0))
     cursor_b = ListProperty((0, 0))
     distance = NumericProperty(0)
+    player_id = StringProperty("")
 
     def __init__(self, **kwargs):
         self.app = App.get_running_app()
@@ -144,8 +145,10 @@ class RootLayout(BoxLayout):
 
     def refresh_shapes(self):
         if self.shapes is None:
-            self.line_a = []
-            self.line_b = []
+            self.line_a = [0, 0]
+            self.line_b = [0, 0]
+            self.progress_a = 0
+            self.progress_b = 0
             return
         line_a = []
         for point in self.shapes[0]:

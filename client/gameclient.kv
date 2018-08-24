@@ -132,13 +132,12 @@ RootLayout:
                     joint: "round"
                     joint_precision: 100
                 Color:
-                    rgba: color_a1
-                Rectangle:
-                    pos: (root.line_a[root.progress_a*2-2]-20, root.line_a[root.progress_a*2-1]-20) if len(root.line_a) >= 2 else (0,0)
-                    size: 40, 40
+                    rgba: color_b1 if root.player_id == "0" else color_a1
+                Ellipse:
+                    pos: (root.line_b[root.progress_b*2-2]-10, root.line_b[root.progress_b*2-1]-10) if root.player_id == "0" else (root.line_a[root.progress_a*2-2]-10, root.line_a[root.progress_a*2-1]-10) 
+                    size: 20, 20
                 Color:
-                    rgba: color_b1
-                Rectangle:
-                    pos: (root.line_b[root.progress_b*2-2]-20, root.line_b[root.progress_b*2-1]-20) if len(root.line_b) >= 2 else (0,0)
+                    rgba: color_a1 if root.player_id == "0" else color_b1
+                Ellipse:
+                    pos: (root.line_a[root.progress_a*2-2]-20, root.line_a[root.progress_a*2-1]-20) if root.player_id == "0" else (root.line_b[root.progress_b*2-2]-20, root.line_b[root.progress_b*2-1]-20) 
                     size: 40, 40
-

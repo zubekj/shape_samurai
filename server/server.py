@@ -46,7 +46,7 @@ class GameServerProtocol(LineReceiver):
             return
 
         self.id = len(self.factory.clients)
-        self.factory.clients[self.id] = self
+        self.factory.clients.append(self)
         self.state = "WAIT"
 
     def lineReceived(self, line):
@@ -91,7 +91,7 @@ class GameServerProtocol(LineReceiver):
 
     def set_game(self):
         self.state = "GAME"
-        self.sendLine("start")
+        self.sendLine("start {0}".format(self.id))
 
     def set_finished(self):
         self.state = "FINISHED"
@@ -106,7 +106,7 @@ class GameServerFactory(Factory):
 
     def __init__(self, app):
         self.app = app
-        self.clients = {}
+        self.clients = []
 
     def buildProtocol(self, addr):
         protocol = GameServerProtocol()
@@ -117,16 +117,16 @@ class GameServerFactory(Factory):
         """
         Broadcasts a game state to all active clients.
         """
-        for client in self.clients.values():
+        for client in self.clients:
             client.send_game_state(game_state)
 
     def reset_connections(self, *args):
         """
         Disconnects all clients, resets server to an initial state.
         """
-        for client in self.clients.values():
+        for client in self.clients:
             client.transport.loseConnection()
-        self.clients = {}
+        self.clients = []
         self.app.label.text = "Server started"
 
 
@@ -159,7 +159,7 @@ class GameServerApp(App):
         self.server_factory = GameServerFactory(self)
         self.button.bind(on_press=self.start_server)
         self.logger = None
-        
+
         return self.layout
 
     def start_server(self, *args):
@@ -188,16 +188,23 @@ class GameServerApp(App):
                           self.server_factory)
 
     def start_game(self):
+        clients = self.server_factory.clients
         if self.current_shape >= len(self.shapes):
-            for client in self.server_factory.clients.values():
+            for client in clients:
                 client.set_finished()
             self.logger.log_info("Game finished")
             return
+
+        if (clients[0].name > clients[1].name):
+            clients[0], clients[1] = clients[1], clients[0]
+            clients[0].id = 0
+            clients[1].id = 1
+
         shape_a, shape_b = self.shapes[self.current_shape]
         self.current_shape += 1
         self.game_state = GameState(shape_a, shape_b)
 
-        for client in self.server_factory.clients.values():
+        for client in clients:
             client.set_game()
         self.server_factory.broadcast_game_state(
                 {"shapes": self.game_state.shapes,
@@ -220,7 +227,7 @@ class GameServerApp(App):
                              "move: {2}".format(player_id, player_name, move))
 
     def game_victory(self):
-        for client in self.server_factory.clients.values():
+        for client in self.server_factory.clients:
             client.set_wait()
 
     def on_stop(self):
