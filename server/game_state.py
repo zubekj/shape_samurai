@@ -9,13 +9,14 @@ class GameState(object):
     RADIUS = 0.04
     PROGRESS_MARGIN = 0.2
 
-    def __init__(self, shape_a, shape_b):
+    def __init__(self, shape_a, shape_b, use_margin=True):
         """
         The player list consists of a position tuple and progress index
         """
         self.shapes = (self.interpolate_shape(shape_a),
                        self.interpolate_shape(shape_b))
         self.players = ([self.shapes[0][0], 0], [self.shapes[1][0], 0])
+        self.use_margin = use_margin
 
     def dist(self, a, b):
         return ((a[0]-b[0])**2+(a[1]-b[1])**2)**0.5
@@ -51,9 +52,9 @@ class GameState(object):
             player[1] += 1
 
         # Is distance exceeded?
-        if (abs(self.players[0][1]/len(self.shapes[0])
-                - self.players[1][1]/len(self.shapes[1]))
-                > self.PROGRESS_MARGIN):
+        if self.use_margin and (abs(self.players[0][1]/len(self.shapes[0])
+                                - self.players[1][1]/len(self.shapes[1]))
+                                > self.PROGRESS_MARGIN):
             self.players[0][1] = 0
             self.players[1][1] = 0
 

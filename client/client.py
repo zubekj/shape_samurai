@@ -5,7 +5,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import NumericProperty, Clock, ObjectProperty,\
-                            ListProperty, StringProperty
+                            ListProperty, StringProperty, BooleanProperty
 from kivy.support import install_twisted_reactor
 
 # fix for pyinstaller packages app to avoid ReactorAlreadyInstalledError
@@ -36,7 +36,8 @@ class GameClientProtocol(LineReceiver):
         line = line.decode('utf-8')
         if self.state == "READY":
             if line[:5] == "start":
-                self.factory.app.root.player_id = line[6]
+                self.factory.app.root.two_player_game = bool(int(line[6]))
+                self.factory.app.root.player_id = line[8]
                 self.set_game()
             elif line == "finish":
                 self.set_finished()
@@ -110,6 +111,7 @@ class RootLayout(BoxLayout):
     cursor_b = ListProperty((0, 0))
     distance = NumericProperty(0)
     player_id = StringProperty("")
+    two_player_game = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         self.app = App.get_running_app()
@@ -275,6 +277,7 @@ class GameClientApp(App):
 
     def on_resume(self):
         pass
+
 
 if __name__ == '__main__':
     GameClientApp().run()

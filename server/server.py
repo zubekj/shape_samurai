@@ -51,8 +51,8 @@ class GameServerProtocol(LineReceiver):
 
     def lineReceived(self, line):
         """
-        Main protocol logic. In state WAITLOGIN server accepts only "ready"
-        message. After two players login game starts. Messages from client
+        Main protocol logic. In state WAIT server accepts only "ready"
+        message. When both players are READY game starts. Messages from client
         after login are interpreted as compressed objects representing player
         moves.
         """
@@ -89,9 +89,9 @@ class GameServerProtocol(LineReceiver):
         self.state = "WAIT"
         self.sendLine("reset")
 
-    def set_game(self):
+    def set_game(self, two_player_game):
         self.state = "GAME"
-        self.sendLine("start {0}".format(self.id))
+        self.sendLine("start {0} {1}".format(int(two_player_game), self.id))
 
     def set_finished(self):
         self.state = "FINISHED"
@@ -150,7 +150,8 @@ class GameServerApp(App):
                                       size=(100, 50), size_hint=(.8, None),
                                       pos_hint={"center_x": 0.5})
         self.button = Button(text="Start server", size=(200, 50),
-                             size_hint=(None, None), pos_hint={"center_x": 0.5})
+                             size_hint=(None, None),
+                             pos_hint={"center_x": 0.5})
         self.layout.add_widget(Widget(size_hint=(1, 1)))
         self.layout.add_widget(self.label)
         self.layout.add_widget(self.session_text)
@@ -200,12 +201,12 @@ class GameServerApp(App):
             clients[0].id = 0
             clients[1].id = 1
 
-        shape_a, shape_b = self.shapes[self.current_shape]
+        shape_a, shape_b, two_player_game = self.shapes[self.current_shape]
         self.current_shape += 1
-        self.game_state = GameState(shape_a, shape_b)
+        self.game_state = GameState(shape_a, shape_b, two_player_game)
 
         for client in clients:
-            client.set_game()
+            client.set_game(two_player_game)
         self.server_factory.broadcast_game_state(
                 {"shapes": self.game_state.shapes,
                  "players": self.game_state.players})
@@ -235,6 +236,7 @@ class GameServerApp(App):
         if self.logger is not None:
             self.logger.stop()
         return True
+
 
 if __name__ == '__main__':
     GameServerApp().run()
