@@ -103,13 +103,16 @@ def generatePolygonShapePoints(verts, density):
 
 if __name__ == "__main__":
     shapes = []
-    for _ in range(2):
+    for _ in range(1):
         s = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
-        shapes.append((s, s))
-    for _ in range(2):
-        s1 = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
-        s2 = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
-        shapes.append((s1, s2))
+        shapes.append((s, s, False))
+    #for _ in range(2):
+    #    s = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
+    #    shapes.append((s, s, True))
+    #for _ in range(2):
+    #     s1 = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
+    #    s2 = generatePolygon(aveRadius=0.6, irregularity=0.5, spikeyness=0.4, numVerts=7)
+    #    shapes.append((s1, s2, True))
     with open("shape_library.json", "w") as f:
         json.dump(shapes, f)
 
